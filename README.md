@@ -1,121 +1,121 @@
-# Aether - Android敏捷开发框架
+# Aether - Android Agile Development Framework
 
-Aether是一个基于SPI（Service Provider Interface）机制的Android模块化开发框架，通过KSP注解技术实现模块的自动发现和注册，让开发者可以轻松组合功能模块和业务模块来构建应用。
+Aether is an Android modular development framework based on the SPI (Service Provider Interface) mechanism. It uses KSP annotation technology to achieve automatic module discovery and registration, allowing developers to easily combine functional modules and business modules to build applications.
 
-## 架构设计
+## Architecture Design
 
-### 核心思想
+### Core Concepts
 
-- **SPI机制**：通过接口与实现分离，实现模块解耦
-- **自动发现**：使用KSP注解处理器自动发现和注册服务提供者
-- **模块化**：功能模块和业务模块独立，可插拔替换
-- **易用性**：统一的API接口，简单易用
+- **SPI Mechanism**: Decouples modules by separating interfaces from implementations
+- **Auto Discovery**: Uses KSP annotation processor to automatically discover and register service providers
+- **Modularity**: Functional modules and business modules are independent and can be plugged in or replaced
+- **Usability**: Unified API interface, simple and easy to use
 
-### 模块结构
+### Module Structure
 
 ```
 Aether/
-├── aether-core/                    # 核心模块（SPI机制、服务注册）
-├── 功能模块/
-│   ├── aether-image-spi/           # 图片加载SPI接口
-│   ├── aether-image-impl-glide/    # Glide实现
-│   ├── aether-network-spi/          # 网络请求SPI接口
-│   ├── aether-network-impl-okhttp/ # OkHttp实现
-│   ├── aether-log-spi/              # 日志SPI接口
-│   └── aether-log-impl-android/     # Android Log实现
-├── 业务模块/
-│   ├── aether-payment-spi/          # 支付SPI接口
-│   ├── aether-payment-impl-alipay/  # 支付宝实现
-│   ├── aether-share-spi/            # 分享SPI接口
-│   ├── aether-share-impl-wechat/    # 微信分享实现
-│   ├── aether-login-spi/            # 登录SPI接口
-│   └── aether-login-impl-oauth/     # OAuth登录实现
-└── sample/                          # 示例应用
+├── aether-core/                    # Core module (SPI mechanism, service registration)
+├── Functional Modules/
+│   ├── aether-image-spi/           # Image loading SPI interface
+│   ├── aether-image-impl-glide/    # Glide implementation
+│   ├── aether-network-spi/         # Network request SPI interface
+│   ├── aether-network-impl-okhttp/ # OkHttp implementation
+│   ├── aether-log-spi/             # Logging SPI interface
+│   └── aether-log-impl-android/    # Android Log implementation
+├── Business Modules/
+│   ├── aether-payment-spi/         # Payment SPI interface
+│   ├── aether-payment-impl-alipay/ # Alipay implementation
+│   ├── aether-share-spi/           # Share SPI interface
+│   ├── aether-share-impl-wechat/   # WeChat share implementation
+│   ├── aether-login-spi/           # Login SPI interface
+│   └── aether-login-impl-oauth/    # OAuth login implementation
+└── sample/                         # Sample application
 ```
 
-## 快速开始
+## Quick Start
 
-### 1. 初始化框架
+### 1. Initialize Framework
 
-在Application中初始化Aether：
+Initialize Aether in your Application:
 
 ```kotlin
 class MyApp : Application() {
     override fun onCreate() {
         super.onCreate()
         
-        // 自动注册所有使用@ServiceProvider注解的服务
+        // Automatically register all services annotated with @ServiceProvider
         ServiceProviderInitializer.initialize(this)
         
-        // 初始化Aether框架
+        // Initialize Aether framework
         Aether.init(this)
     }
 }
 ```
 
-### 2. 使用功能模块
+### 2. Using Functional Modules
 
-#### 图片加载
+#### Image Loading
 
 ```kotlin
-// 获取图片加载服务
+// Get image loading service
 val imageLoader = Aether.getService<IImageLoader>()
 
-// 加载图片
+// Load image
 imageLoader?.load(imageView, "https://example.com/image.jpg")
 
-// 加载圆形图片
+// Load circular image
 imageLoader?.loadCircle(imageView, "https://example.com/avatar.jpg")
 
-// 加载圆角图片
+// Load rounded image
 imageLoader?.loadRound(imageView, "https://example.com/image.jpg", radius = 8f)
 ```
 
-#### 网络请求
+#### Network Request
 
 ```kotlin
-// 获取网络客户端
+// Get network client
 val networkClient = Aether.getService<INetworkClient>()
 
-// 初始化网络配置
+// Initialize network configuration
 networkClient?.init(NetworkConfig(
     baseUrl = "https://api.example.com/",
     connectTimeout = 30_000
 ))
 
-// 发起GET请求
+// Make GET request
 networkClient?.get(
     url = "/api/user",
     params = mapOf("id" to "123"),
     responseType = UserResponse::class.java,
     callback = object : NetworkCallback<UserResponse> {
         override fun onSuccess(data: UserResponse) {
-            // 处理成功
+            // Handle success
         }
         override fun onError(error: Throwable) {
-            // 处理错误
+            // Handle error
         }
     }
 )
 ```
 
-#### 日志
+#### Logging
 
 ```kotlin
-// 获取日志服务
+// Get logging service
 val logger = Aether.getService<ILogger>()
 
-// 设置日志级别
+// Set log level
 logger?.setLogLevel(LogLevel.DEBUG)
 
-// 使用日志
+// Use logger
 logger?.d("TAG", "Debug message")
 logger?.e("TAG", "Error message", exception)
 ```
 
-### 3. 使用业务模块
+### 3. Using Business Modules
 
-#### 登录
+#### Login
 
 ```kotlin
 val loginService = Aether.getService<ILoginService>()
@@ -124,19 +124,19 @@ loginService?.login(
     activity = this,
     callback = object : LoginCallback {
         override fun onSuccess(userInfo: UserInfo) {
-            // 登录成功
+            // Login successful
         }
         override fun onError(error: Throwable) {
-            // 登录失败
+            // Login failed
         }
         override fun onCancel() {
-            // 用户取消
+            // User cancelled
         }
     }
 )
 ```
 
-#### 支付
+#### Payment
 
 ```kotlin
 val paymentService = Aether.getService<IPaymentService>()
@@ -146,23 +146,23 @@ paymentService?.pay(
     order = PaymentOrder(
         orderId = "order_123",
         amount = 99.99,
-        subject = "商品名称"
+        subject = "Product Name"
     ),
     callback = object : PaymentCallback {
         override fun onSuccess(orderId: String, amount: Double) {
-            // 支付成功
+            // Payment successful
         }
         override fun onError(error: Throwable) {
-            // 支付失败
+            // Payment failed
         }
         override fun onCancel() {
-            // 用户取消
+            // User cancelled
         }
     }
 )
 ```
 
-#### 分享
+#### Share
 
 ```kotlin
 val shareService = Aether.getService<IShareService>()
@@ -171,18 +171,18 @@ shareService?.share(
     activity = this,
     content = ShareContent(
         type = ShareType.LINK,
-        title = "分享标题",
-        content = "分享内容",
+        title = "Share Title",
+        content = "Share Content",
         linkUrl = "https://example.com"
     )
 )
 ```
 
-## 扩展开发
+## Extension Development
 
-### 创建自定义服务提供者
+### Creating Custom Service Providers
 
-1. **实现SPI接口**
+1. **Implement SPI Interface**
 
 ```kotlin
 @ServiceProvider(priority = 100)
@@ -190,16 +190,16 @@ class MyImageLoader : IImageLoader {
     override fun getProviderId(): String = "my_loader"
     
     override fun initialize(context: Context) {
-        // 初始化逻辑
+        // Initialization logic
     }
     
-    // 实现接口方法...
+    // Implement interface methods...
 }
 ```
 
-2. **添加依赖**
+2. **Add Dependencies**
 
-在模块的`build.gradle.kts`中：
+In your module's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
@@ -209,36 +209,37 @@ dependencies {
 }
 ```
 
-3. **使用**
+3. **Usage**
 
-在Application中会自动注册，直接使用：
+Automatically registered in Application, use directly:
 
 ```kotlin
 val imageLoader = Aether.getService<IImageLoader>()
 ```
 
-## 设计优势
+## Design Advantages
 
-1. **解耦**：接口与实现分离，易于替换
-2. **可扩展**：轻松添加新的功能模块和业务模块
-3. **自动发现**：使用KSP自动注册，无需手动配置
-4. **优先级**：支持多个实现，按优先级选择
-5. **统一API**：所有服务通过统一的Aether API获取
+1. **Decoupling**: Interface and implementation separation, easy to replace
+2. **Extensible**: Easily add new functional modules and business modules
+3. **Auto Discovery**: Uses KSP for automatic registration, no manual configuration needed
+4. **Priority**: Supports multiple implementations, selected by priority
+5. **Unified API**: All services obtained through unified Aether API
 
-## 技术栈
+## Technology Stack
 
-- **Kotlin**: 主要开发语言
-- **KSP**: 注解处理和代码生成
-- **Gradle**: 构建工具
-- **SPI模式**: 服务提供者接口模式
+- **Kotlin**: Primary development language
+- **KSP**: Annotation processing and code generation
+- **Gradle**: Build tool
+- **SPI Pattern**: Service Provider Interface pattern
 
-## 参考
+## References
 
-- 参考了业界主流方案如ARouter、WMRouter等的设计思想
-- 采用SPI机制实现模块解耦
-- 使用KSP替代APT，提升编译性能
+- Referenced design concepts from mainstream solutions like ARouter, WMRouter, etc.
+- Uses SPI mechanism to achieve module decoupling
+- Uses KSP instead of APT to improve compilation performance
 
 ## License
 
-Copyright © 2025 Aether Framework
+Copyright © 2025 kernelflux
 
+Licensed under the MIT License.
