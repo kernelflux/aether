@@ -1,0 +1,55 @@
+[versions]
+agp = "8.13.1"
+fluxRouterCompilerKsp = "0.0.2"
+fluxRouterCore = "0.0.2"
+kotlin = "2.0.21"
+ksp = "2.0.21-1.0.28"
+coreKtx = "1.17.0"
+appcompat = "1.7.1"
+material = "1.13.0"
+activity = "1.12.1"
+constraintlayout = "2.2.1"
+junit = "4.13.2"
+junitVersion = "1.1.5"
+espressoCore = "3.5.1"
+# 路由框架（使用现有方案，这里用ARouter作为示例）
+arouter = "1.5.2"
+# 网络库
+okhttp = "4.12.0"
+retrofit = "2.9.0"
+# 图片加载
+glide = "4.16.0"
+# JSON解析
+gson = "2.10.1"
+
+fluxrouter = "0.0.2"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+flux-router-core = { module = "com.kernelflux.mobile:flux-router-core", version.ref = "fluxRouterCore" }
+flux-router-compiler-ksp = { module = "com.kernelflux.mobile:flux-router-compiler-ksp", version.ref = "fluxRouterCompilerKsp" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+# 路由
+arouter-api = { group = "com.alibaba", name = "arouter-api", version.ref = "arouter" }
+# 网络
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+# 图片加载
+glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+# JSON
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+flux-router = { id = "com.kernelflux.fluxrouter", version.ref = "fluxrouter" }
+
