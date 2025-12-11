@@ -1,0 +1,97 @@
+/**
+ * Common Maven Central publishing configuration script
+ *
+ * Usage:
+ * 1. Apply this script in build.gradle:
+ *    apply from: rootProject.file('gradle/maven-publish.gradle')
+ *
+ * 2. Define the following variables before applying:
+ *    ext {
+ *        publishArtifactId = "aniflux-xxx"  // Required: artifact ID
+ *        publishVersion = "1.0.0"            // Required: version number
+ *        publishBundleName = "aniflux_xxx_bundle_v${publishVersion}"  // Optional: defaults to artifactId
+ *    }
+ */
+// Check required configuration
+if (!project.hasProperty('publishArtifactId')) {
+    throw new GradleException("publishArtifactId must be defined before applying maven-publish.gradle")
+}
+if (!project.hasProperty('publishVersion')) {
+    throw new GradleException("publishVersion must be defined before applying maven-publish.gradle")
+}
+
+// Default configuration
+def sGroupId = "com.kernelflux.mobile"
+def sArtifactId = project.ext.publishArtifactId
+def sVersion = project.ext.publishVersion
+def sBundleName = project.hasProperty('publishBundleName')
+        ? project.ext.publishBundleName
+        : "${sArtifactId.replace('-', '_')}_bundle_v${sVersion}"
+
+// Configure mavenCentralUpload
+mavenCentralUpload {
+    uploadBundleName = sBundleName
+    username = findProperty("sonatypeUsername")
+    password = findProperty("sonatypePassword")
+
+    groupId = sGroupId
+    artifactId = sArtifactId
+    version = sVersion
+
+    // Read signing configuration
+    def privatePropsFile = project.rootProject.file("private.properties")
+    if (privatePropsFile.exists()) {
+        def privateProps = new Properties()
+        privateProps.load(new FileInputStream(privatePropsFile))
+        def signingKeyFileProp = privateProps.getProperty("signingKeyFile")
+        def signingPassProp = privateProps.getProperty("signingPass")
+
+        if (signingKeyFileProp) {
+            def keyFile = new File(signingKeyFileProp)
+            def finalPath = keyFile.isAbsolute()
+                    ? signingKeyFileProp
+                    : new File(project.rootProject.projectDir, signingKeyFileProp).absolutePath
+            def signingKeyFileObj = new File(finalPath)
+            // Only set signingKeyFile if the file actually exists
+            if (signingKeyFileObj.exists()) {
+                signingKeyFile.set(finalPath)
+                println("Maven Central Upload: signingKeyFile configured: ${finalPath} ✓")
+            } else {
+                println("Maven Central Upload: signingKeyFile not found: ${finalPath}, signing will be disabled")
+            }
+        }
+
+        if (signingPassProp) {
+            signingPass.set(signingPassProp)
+            println("Maven Central Upload: signingPass configured")
+        }
+    }
+
+    // In Groovy DSL, need to explicitly create Action object
+    pom.set(new Action<MavenPom>() {
+        @Override
+        void execute(MavenPom mavenPom) {
+            mavenPom.name.set(sArtifactId)
+            mavenPom.description.set("A powerful Android animation loading framework ")
+            mavenPom.url.set("https://github.com/kernelflux")
+            mavenPom.licenses {
+                license {
+                    name.set("Apache License 2.0")
+                    url.set("http://www.apache.org/licenses/LICENSE-2.0")
+                }
+            }
+            mavenPom.developers {
+                developer {
+                    id.set("kernelflux")
+                    name.set("0kt12")
+                }
+            }
+            mavenPom.scm {
+                url.set("https://github.com/kernelflux")
+                connection.set("https://github.com/kernelflux")
+                developerConnection.set("https://github.com/kernelflux")
+            }
+        }
+    })
+}
+

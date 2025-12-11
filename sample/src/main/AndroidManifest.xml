@@ -29,6 +29,30 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ImageLoaderActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".NetworkActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".PaymentActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".ShareActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
 
     </application>
 

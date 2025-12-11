@@ -8,32 +8,38 @@ plugins {
 
 dependencies {
     implementation(libs.flux.router.core)
+    implementation(libs.recyclerview)
     ksp(libs.flux.router.compiler.ksp)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.androidx.cardview)
 
-    // 功能模块SPI
-    implementation(project(":aether-image-spi"))
-    implementation(project(":aether-network-spi"))
-    implementation(project(":aether-log-spi"))
+    // 功能模块 API
+    implementation(project(":aether-imageloader-api"))
+    implementation(project(":aether-network-api"))
+    implementation(project(":aether-log-api"))
     
     // 功能模块实现
-    implementation(project(":aether-image-impl-glide"))
-    implementation(project(":aether-network-impl-okhttp"))
-    implementation(project(":aether-log-impl-android"))
+    implementation(project(":aether-imageloader-glide"))
+    implementation(project(":aether-network-okhttp"))
+    implementation(project(":aether-log-android"))
     
-    // 业务模块SPI
-    implementation(project(":aether-payment-spi"))
-    implementation(project(":aether-share-spi"))
-    implementation(project(":aether-login-spi"))
+    // 业务模块 API
+    implementation(project(":aether-payment-api"))
+    implementation(project(":aether-share-api"))
+    implementation(project(":aether-login-api"))
     
     // 业务模块实现
-    implementation(project(":aether-payment-impl-alipay"))
-    implementation(project(":aether-share-impl-wechat"))
-    implementation(project(":aether-login-impl-oauth"))
+    implementation(project(":aether-payment-alipay"))
+    implementation(project(":aether-share-wechat"))
+    implementation(project(":aether-login-oauth"))
+    
+    // Glide KSP annotation processor
+    ksp(libs.glide.ksp)
 }
 
 ksp {

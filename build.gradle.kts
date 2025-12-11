@@ -4,3 +4,6 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.android.library) apply false
 }
+
+// Unified version management for Maven publishing
+rootProject.ext.set("aetherVersion", "1.0.0")

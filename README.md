@@ -15,21 +15,20 @@ Aether is an Android modular development framework based on the SPI (Service Pro
 
 ```
 Aether/
-├── aether-core/                    # Core module (SPI mechanism, service registration)
 ├── Functional Modules/
-│   ├── aether-image-spi/           # Image loading SPI interface
-│   ├── aether-image-impl-glide/    # Glide implementation
-│   ├── aether-network-spi/         # Network request SPI interface
-│   ├── aether-network-impl-okhttp/ # OkHttp implementation
-│   ├── aether-log-spi/             # Logging SPI interface
-│   └── aether-log-impl-android/    # Android Log implementation
+│   ├── aether-imageloader-api/     # Image loader API interface
+│   ├── aether-imageloader-glide/   # Glide implementation
+│   ├── aether-network-api/         # Network request API interface
+│   ├── aether-network-okhttp/      # OkHttp implementation
+│   ├── aether-log-api/             # Logging API interface
+│   └── aether-log-android/         # Android Log implementation
 ├── Business Modules/
-│   ├── aether-payment-spi/         # Payment SPI interface
-│   ├── aether-payment-impl-alipay/ # Alipay implementation
-│   ├── aether-share-spi/           # Share SPI interface
-│   ├── aether-share-impl-wechat/   # WeChat share implementation
-│   ├── aether-login-spi/           # Login SPI interface
-│   └── aether-login-impl-oauth/    # OAuth login implementation
+│   ├── aether-payment-api/         # Payment API interface
+│   ├── aether-payment-alipay/      # Alipay implementation
+│   ├── aether-share-api/           # Share API interface
+│   ├── aether-share-wechat/        # WeChat share implementation
+│   ├── aether-login-api/           # Login API interface
+│   └── aether-login-oauth/         # OAuth login implementation
 └── sample/                         # Sample application
 ```
 
@@ -58,17 +57,24 @@ class MyApp : Application() {
 #### Image Loading
 
 ```kotlin
-// Get image loading service
-val imageLoader = Aether.getService<IImageLoader>()
+// Get image loader service
+val imageLoader = FluxRouter.getService<IImageLoader>()
 
-// Load image
-imageLoader?.load(imageView, "https://example.com/image.jpg")
+// Simple load
+imageLoader?.load("https://example.com/image.jpg")?.into(imageView)
 
-// Load circular image
-imageLoader?.loadCircle(imageView, "https://example.com/avatar.jpg")
+// With configuration
+imageLoader?.load("https://example.com/image.jpg")
+    ?.placeholder(R.drawable.placeholder)
+    ?.error(R.drawable.error)
+    ?.circle()
+    ?.into(imageView)
 
-// Load rounded image
-imageLoader?.loadRound(imageView, "https://example.com/image.jpg", radius = 8f)
+// Lifecycle-aware (Activity/Fragment/View)
+imageLoader?.with(activity)
+    ?.load("https://example.com/image.jpg")
+    ?.radius(8f)
+    ?.into(imageView)
 ```
 
 #### Network Request
@@ -204,7 +210,7 @@ In your module's `build.gradle.kts`:
 ```kotlin
 dependencies {
     implementation(project(":aether-core"))
-    implementation(project(":aether-image-spi"))
+    implementation(project(":aether-imageloader-api"))
     ksp(project(":aether-core"))
 }
 ```

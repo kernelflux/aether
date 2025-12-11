@@ -24,25 +24,25 @@ dependencyResolutionManagement {
 
 rootProject.name = "Aether"
 
-// 功能模块 SPI
-include(":aether-image-spi")
-include(":aether-network-spi")
-include(":aether-log-spi")
+// 功能模块 API（接口定义）
+include(":aether-imageloader-api")
+include(":aether-network-api")
+include(":aether-log-api")
 
-// 功能模块实现示例
-include(":aether-image-impl-glide")
-include(":aether-network-impl-okhttp")
-include(":aether-log-impl-android")
+// 功能模块实现
+include(":aether-imageloader-glide")
+include(":aether-network-okhttp")
+include(":aether-log-android")
 
-// 业务模块 SPI
-include(":aether-payment-spi")
-include(":aether-share-spi")
-include(":aether-login-spi")
+// 业务模块 API（接口定义）
+include(":aether-payment-api")
+include(":aether-share-api")
+include(":aether-login-api")
 
-// 业务模块实现示例
-include(":aether-payment-impl-alipay")
-include(":aether-share-impl-wechat")
-include(":aether-login-impl-oauth")
+// 业务模块实现
+include(":aether-payment-alipay")
+include(":aether-share-wechat")
+include(":aether-login-oauth")
 
 // 示例应用
 include(":sample")
