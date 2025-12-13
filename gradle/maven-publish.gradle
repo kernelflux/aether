@@ -1,18 +1,3 @@
-/**
- * Common Maven Central publishing configuration script
- *
- * Usage:
- * 1. Apply this script in build.gradle:
- *    apply from: rootProject.file('gradle/maven-publish.gradle')
- *
- * 2. Define the following variables before applying:
- *    ext {
- *        publishArtifactId = "aniflux-xxx"  // Required: artifact ID
- *        publishVersion = "1.0.0"            // Required: version number
- *        publishBundleName = "aniflux_xxx_bundle_v${publishVersion}"  // Optional: defaults to artifactId
- *    }
- */
-// Check required configuration
 if (!project.hasProperty('publishArtifactId')) {
     throw new GradleException("publishArtifactId must be defined before applying maven-publish.gradle")
 }
@@ -28,18 +13,37 @@ def sBundleName = project.hasProperty('publishBundleName')
         ? project.ext.publishBundleName
         : "${sArtifactId.replace('-', '_')}_bundle_v${sVersion}"
 
-// Configure mavenCentralUpload
-mavenCentralUpload {
-    uploadBundleName = sBundleName
-    username = findProperty("sonatypeUsername")
-    password = findProperty("sonatypePassword")
 
-    groupId = sGroupId
-    artifactId = sArtifactId
-    version = sVersion
+// Read configuration from private.properties or gradle properties
+def privatePropsFile = project.rootProject.file("private.properties")
+def sonatypeUsername = project.findProperty("sonatypeUsername")
+def sonatypePassword = project.findProperty("sonatypePassword")
+
+if (privatePropsFile.exists()) {
+    def privateProps = new Properties()
+    privateProps.load(new FileInputStream(privatePropsFile))
+    // Read username and password from private.properties if not set in gradle properties
+    if (!sonatypeUsername) {
+        sonatypeUsername = privateProps.getProperty("sonatypeUsername")
+    }
+    if (!sonatypePassword) {
+        sonatypePassword = privateProps.getProperty("sonatypePassword")
+    }
+}
+
+mavenCentralUpload {
+    uploadBundleName.set(sBundleName)
+    if (sonatypeUsername) {
+        username.set(sonatypeUsername)
+    }
+    if (sonatypePassword) {
+        password.set(sonatypePassword)
+    }
+    groupId.set(sGroupId)
+    artifactId.set(sArtifactId)
+    version.set(sVersion)
 
     // Read signing configuration
-    def privatePropsFile = project.rootProject.file("private.properties")
     if (privatePropsFile.exists()) {
         def privateProps = new Properties()
         privateProps.load(new FileInputStream(privatePropsFile))
@@ -52,7 +56,6 @@ mavenCentralUpload {
                     ? signingKeyFileProp
                     : new File(project.rootProject.projectDir, signingKeyFileProp).absolutePath
             def signingKeyFileObj = new File(finalPath)
-            // Only set signingKeyFile if the file actually exists
             if (signingKeyFileObj.exists()) {
                 signingKeyFile.set(finalPath)
                 println("Maven Central Upload: signingKeyFile configured: ${finalPath} ✓")
@@ -72,7 +75,7 @@ mavenCentralUpload {
         @Override
         void execute(MavenPom mavenPom) {
             mavenPom.name.set(sArtifactId)
-            mavenPom.description.set("A powerful Android animation loading framework ")
+            mavenPom.description.set("A Android modular development framework")
             mavenPom.url.set("https://github.com/kernelflux")
             mavenPom.licenses {
                 license {
@@ -94,4 +97,3 @@ mavenCentralUpload {
         }
     })
 }
-

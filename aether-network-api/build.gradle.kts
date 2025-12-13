@@ -9,6 +9,7 @@ android {
 }
 
 dependencies {
-    // 接口层不依赖core，保持纯净
+    // Kotlin 协程支持（Flow 需要）
+    api(libs.kotlinx.coroutines.core)
 }
 

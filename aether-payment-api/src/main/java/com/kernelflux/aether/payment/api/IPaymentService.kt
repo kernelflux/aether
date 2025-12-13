@@ -1,4 +1,4 @@
-package com.kernelflux.aether.payment.spi
+package com.kernelflux.aether.payment.api
 
 import android.app.Activity
 

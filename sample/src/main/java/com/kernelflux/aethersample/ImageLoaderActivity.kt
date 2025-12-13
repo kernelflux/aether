@@ -1,7 +1,8 @@
 package com.kernelflux.aethersample
 
+import android.util.Log
 import android.widget.ImageView
-import com.kernelflux.aether.imageloader.spi.IImageLoader
+import com.kernelflux.aether.imageloader.api.IImageLoader
 import com.kernelflux.fluxrouter.core.FluxRouter
 
 /**
@@ -24,6 +25,7 @@ class ImageLoaderActivity : BaseActivity() {
         imageLoader = FluxRouter.getService(IImageLoader::class.java)
         imageView = findViewById(R.id.img_view)
 
+        Log.i("xxx2_tag","img loader=====>$imageLoader")
         // 示例1: 最简单用法（自动生命周期感知和安全检查）
         imageView?.apply {
             imageLoader?.load("https://cdn.pixabay.com/photo/2024/03/30/15/51/cat-8664948_1280.jpg")

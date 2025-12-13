@@ -1,4 +1,4 @@
-package com.kernelflux.aether.log.spi
+package com.kernelflux.aether.log.api
 
 /**
  * 日志级别

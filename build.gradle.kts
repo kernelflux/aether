@@ -6,4 +6,4 @@ plugins {
 }
 
 // Unified version management for Maven publishing
-rootProject.ext.set("aetherVersion", "1.0.0")
+rootProject.ext.set("aetherVersion", "1.0.2")

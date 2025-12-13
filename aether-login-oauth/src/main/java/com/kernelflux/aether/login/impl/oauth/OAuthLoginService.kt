@@ -3,9 +3,9 @@ package com.kernelflux.aether.login.impl.oauth
 import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
-import com.kernelflux.aether.login.spi.ILoginService
-import com.kernelflux.aether.login.spi.LoginCallback
-import com.kernelflux.aether.login.spi.UserInfo
+import com.kernelflux.aether.login.api.ILoginService
+import com.kernelflux.aether.login.api.LoginCallback
+import com.kernelflux.aether.login.api.UserInfo
 import com.kernelflux.fluxrouter.annotation.FluxService
 
 /**

@@ -1,10 +1,9 @@
 package com.kernelflux.aether.share.impl.wechat
 
 import android.app.Activity
-import android.content.Context
-import com.kernelflux.aether.share.spi.IShareService
-import com.kernelflux.aether.share.spi.ShareCallback
-import com.kernelflux.aether.share.spi.ShareContent
+import com.kernelflux.aether.share.api.IShareService
+import com.kernelflux.aether.share.api.ShareCallback
+import com.kernelflux.aether.share.api.ShareContent
 import com.kernelflux.fluxrouter.annotation.FluxService
 
 /**

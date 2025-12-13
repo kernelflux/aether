@@ -2,9 +2,9 @@ package com.kernelflux.aether.payment.impl.alipay
 
 import android.app.Activity
 import android.content.Context
-import com.kernelflux.aether.payment.spi.IPaymentService
-import com.kernelflux.aether.payment.spi.PaymentCallback
-import com.kernelflux.aether.payment.spi.PaymentOrder
+import com.kernelflux.aether.payment.api.IPaymentService
+import com.kernelflux.aether.payment.api.PaymentCallback
+import com.kernelflux.aether.payment.api.PaymentOrder
 import com.kernelflux.fluxrouter.annotation.FluxService
 
 /**

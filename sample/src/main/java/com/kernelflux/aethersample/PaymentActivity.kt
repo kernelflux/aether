@@ -2,7 +2,7 @@ package com.kernelflux.aethersample
 
 import android.widget.Button
 import android.widget.TextView
-import com.kernelflux.aether.payment.spi.IPaymentService
+import com.kernelflux.aether.payment.api.IPaymentService
 import com.kernelflux.fluxrouter.core.FluxRouter
 
 /**
@@ -31,12 +31,12 @@ class PaymentActivity : BaseActivity() {
             statusText.text = "Processing payment..."
             paymentService?.pay(
                 activity = this,
-                order = com.kernelflux.aether.payment.spi.PaymentOrder(
+                order = com.kernelflux.aether.payment.api.PaymentOrder(
                     orderId = "order_${System.currentTimeMillis()}",
                     amount = 99.99,
                     subject = "测试商品"
                 ),
-                callback = object : com.kernelflux.aether.payment.spi.PaymentCallback {
+                callback = object : com.kernelflux.aether.payment.api.PaymentCallback {
                     override fun onSuccess(orderId: String, amount: Double) {
                         runOnUiThread {
                             statusText.text = "Payment Success!\nOrder: $orderId\nAmount: $$amount"

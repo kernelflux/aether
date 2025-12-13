@@ -1,4 +1,4 @@
-package com.kernelflux.aether.login.spi
+package com.kernelflux.aether.login.api
 
 import android.app.Activity
 

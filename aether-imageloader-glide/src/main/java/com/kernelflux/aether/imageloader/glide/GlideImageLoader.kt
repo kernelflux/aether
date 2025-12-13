@@ -27,12 +27,12 @@ import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.target.CustomViewTarget
 import com.bumptech.glide.request.transition.DrawableCrossFadeFactory
-import com.kernelflux.aether.imageloader.spi.ImageLoadCallback
-import com.kernelflux.aether.imageloader.spi.ImagePriority
-import com.kernelflux.aether.imageloader.spi.ImageRequestBuilder
-import com.kernelflux.aether.imageloader.spi.ImageRequestHandle
-import com.kernelflux.aether.imageloader.spi.ImageScaleType
-import com.kernelflux.aether.imageloader.spi.IImageLoader
+import com.kernelflux.aether.imageloader.api.ImageLoadCallback
+import com.kernelflux.aether.imageloader.api.ImagePriority
+import com.kernelflux.aether.imageloader.api.ImageRequestBuilder
+import com.kernelflux.aether.imageloader.api.ImageRequestHandle
+import com.kernelflux.aether.imageloader.api.ImageScaleType
+import com.kernelflux.aether.imageloader.api.IImageLoader
 import com.kernelflux.fluxrouter.annotation.FluxService
 
 /**

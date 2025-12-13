@@ -1,8 +1,8 @@
 package com.kernelflux.aether.log.impl.android
 
 import android.util.Log
-import com.kernelflux.aether.log.spi.ILogger
-import com.kernelflux.aether.log.spi.LogLevel
+import com.kernelflux.aether.log.api.ILogger
+import com.kernelflux.aether.log.api.LogLevel
 import com.kernelflux.fluxrouter.annotation.FluxService
 
 /**

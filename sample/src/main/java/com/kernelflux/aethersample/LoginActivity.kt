@@ -2,7 +2,7 @@ package com.kernelflux.aethersample
 
 import android.widget.Button
 import android.widget.TextView
-import com.kernelflux.aether.login.spi.ILoginService
+import com.kernelflux.aether.login.api.ILoginService
 import com.kernelflux.fluxrouter.core.FluxRouter
 
 /**
@@ -32,8 +32,8 @@ class LoginActivity : BaseActivity() {
         loginButton.setOnClickListener {
             loginService?.login(
                 activity = this,
-                callback = object : com.kernelflux.aether.login.spi.LoginCallback {
-                    override fun onSuccess(userInfo: com.kernelflux.aether.login.spi.UserInfo) {
+                callback = object : com.kernelflux.aether.login.api.LoginCallback {
+                    override fun onSuccess(userInfo: com.kernelflux.aether.login.api.UserInfo) {
                         runOnUiThread {
                             statusText.text =
                                 "Login Success:\n${userInfo.nickname}\n${userInfo.userId}"

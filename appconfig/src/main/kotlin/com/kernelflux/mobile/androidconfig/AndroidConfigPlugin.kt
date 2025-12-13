@@ -15,6 +15,8 @@ class AndroidConfigPlugin : Plugin<Project> {
         project.afterEvaluate {
             tasks.withType(KotlinJvmCompile::class.java).configureEach {
                 compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
+                // 跳过元数据版本检查，因为 OkHttp 可能使用较新的 Kotlin 版本编译
+                compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check")
             }
         }
 
@@ -24,6 +26,7 @@ class AndroidConfigPlugin : Plugin<Project> {
                 compileSdk = 36
                 defaultConfig {
                     minSdk = 23
+                    consumerProguardFiles("consumer-rules.pro")
                 }
 
                 compileOptions {
@@ -31,11 +34,34 @@ class AndroidConfigPlugin : Plugin<Project> {
                     targetCompatibility = JavaVersion.VERSION_11
                 }
 
+                buildTypes {
+                    release {
+                        // 只有非 -api 结尾的实现模块才启用混淆
+                        // API 模块通常不需要混淆，或者只需要简单的混淆规则
+                        val isApiModule = project.name.endsWith("-api")
+                        if (!isApiModule) {
+                            isMinifyEnabled = true
+                            proguardFiles(
+                                getDefaultProguardFile("proguard-android-optimize.txt"),
+                                "proguard-rules.pro"
+                            )
+                        } else {
+                            // API 模块不启用混淆，保持接口清晰
+                            isMinifyEnabled = false
+                        }
+                    }
+                    debug {
+                        isMinifyEnabled = false
+                    }
+                }
 
                 buildFeatures {
                     buildConfig = true
                 }
 
+                publishing {
+                    singleVariant("release") {}
+                }
             }
         }
 

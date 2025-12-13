@@ -2,7 +2,7 @@ package com.kernelflux.aethersample
 
 import android.widget.Button
 import android.widget.TextView
-import com.kernelflux.aether.share.spi.IShareService
+import com.kernelflux.aether.share.api.IShareService
 import com.kernelflux.fluxrouter.core.FluxRouter
 
 /**
@@ -31,8 +31,8 @@ class ShareActivity : BaseActivity() {
             statusText.text = "Sharing link..."
             shareService?.share(
                 activity = this,
-                content = com.kernelflux.aether.share.spi.ShareContent(
-                    type = com.kernelflux.aether.share.spi.ShareType.LINK,
+                content = com.kernelflux.aether.share.api.ShareContent(
+                    type = com.kernelflux.aether.share.api.ShareType.LINK,
                     title = "Aether Framework",
                     content = "A powerful Android modular development framework",
                     linkUrl = "https://github.com/kernelflux/aether"
@@ -45,8 +45,8 @@ class ShareActivity : BaseActivity() {
             statusText.text = "Sharing text..."
             shareService?.share(
                 activity = this,
-                content = com.kernelflux.aether.share.spi.ShareContent(
-                    type = com.kernelflux.aether.share.spi.ShareType.TEXT,
+                content = com.kernelflux.aether.share.api.ShareContent(
+                    type = com.kernelflux.aether.share.api.ShareType.TEXT,
                     title = "Aether Framework",
                     content = "A powerful Android modular development framework based on SPI mechanism"
                 )

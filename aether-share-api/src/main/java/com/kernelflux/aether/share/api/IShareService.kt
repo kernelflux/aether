@@ -1,4 +1,4 @@
-package com.kernelflux.aether.share.spi
+package com.kernelflux.aether.share.api
 
 import android.app.Activity
 

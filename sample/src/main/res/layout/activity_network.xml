@@ -12,28 +12,154 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="32dp"
-        android:text="Network Demo"
+        android:layout_marginBottom="16dp"
+        android:text="Network Test Cases"
         android:textColor="#333333"
         android:textSize="24sp"
         android:textStyle="bold"
         tools:ignore="HardcodedText" />
 
-    <Button
-        android:id="@+id/btn_get"
+    <TextView
+        android:id="@+id/network_state_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:text="GET Request"
+        android:padding="8dp"
+        android:background="#E0E0E0"
+        android:text="Network State: Unknown"
+        android:textColor="#333333"
+        android:textSize="14sp"
         tools:ignore="HardcodedText" />
 
-    <Button
-        android:id="@+id/btn_post"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="POST Request"
-        tools:ignore="HardcodedText" />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Basic Requests"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                tools:ignore="HardcodedText" />
+
+            <Button
+                android:id="@+id/btn_get"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="1. GET Request"
+                tools:ignore="HardcodedText" />
+
+            <Button
+                android:id="@+id/btn_post_json"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="2. POST JSON Request"
+                tools:ignore="HardcodedText" />
+
+            <Button
+                android:id="@+id/btn_post_form"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="3. POST Form Request"
+                tools:ignore="HardcodedText" />
+
+            <Button
+                android:id="@+id/btn_put"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="4. PUT Request"
+                tools:ignore="HardcodedText" />
+
+            <Button
+                android:id="@+id/btn_delete"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="5. DELETE Request"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"
+                android:text="Advanced Features"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                tools:ignore="HardcodedText" />
+
+            <Button
+                android:id="@+id/btn_with_headers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="6. Request with Headers"
+                tools:ignore="HardcodedText" />
+
+            <Button
+                android:id="@+id/btn_with_params"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="7. Request with Params"
+                tools:ignore="HardcodedText" />
+
+            <Button
+                android:id="@+id/btn_cache"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="8. Cache Test"
+                tools:ignore="HardcodedText" />
+
+            <Button
+                android:id="@+id/btn_retry"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="9. Retry Test"
+                tools:ignore="HardcodedText" />
+
+            <Button
+                android:id="@+id/btn_sync"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="10. Sync Request"
+                tools:ignore="HardcodedText" />
+
+            <Button
+                android:id="@+id/btn_cancel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="11. Cancel Request"
+                tools:ignore="HardcodedText" />
+
+            <Button
+                android:id="@+id/btn_dsl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="12. DSL Builder"
+                tools:ignore="HardcodedText" />
+
+        </LinearLayout>
+
+    </ScrollView>
 
     <ScrollView
         android:layout_width="match_parent"

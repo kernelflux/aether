@@ -16,10 +16,13 @@ ksp {
 dependencies {
     ksp(libs.flux.router.compiler.ksp)
     api(libs.flux.router.core)
-    api(project(":aether-network-api"))
     api(libs.okhttp)
     api(libs.retrofit)
     api(libs.retrofit.gson)
     api(libs.gson)
+    api(libs.androidx.core.ktx)
+
+    api(project(":aether-network-api"))
+
 }
 

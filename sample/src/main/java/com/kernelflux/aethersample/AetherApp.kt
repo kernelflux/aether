@@ -2,8 +2,8 @@ package com.kernelflux.aethersample
 
 import android.app.Application
 import android.content.Context
-import com.kernelflux.aether.log.spi.ILogger
-import com.kernelflux.aether.network.spi.INetworkClient
+import com.kernelflux.aether.log.api.ILogger
+import com.kernelflux.aether.network.api.INetworkClient
 import com.kernelflux.fluxrouter.core.FluxRouter
 
 /**
@@ -24,17 +24,22 @@ class AetherApp : Application() {
         FluxRouter.init(this)
 
         // 3. 配置网络客户端（示例）
-        FluxRouter.getService(INetworkClient::class.java)?.init(
-            com.kernelflux.aether.network.spi.NetworkConfig(
-                baseUrl = "https://api.example.com/",
-                connectTimeout = 30_000,
-                readTimeout = 30_000
-            )
+        val networkClient = FluxRouter.getService(INetworkClient::class.java)
+        networkClient?.init(
+            this,
+            com.kernelflux.aether.network.api.NetworkConfig.builder()
+                .baseUrl("https://api.github.com/")
+                .connectTimeout(30_000)
+                .readTimeout(30_000)
+                .writeTimeout(30_000)
+                .enableLogging(true)
+                .enableCookies(true)
+                .build()
         )
 
         // 4. 配置日志（示例）
         FluxRouter.getService(ILogger::class.java)?.apply {
-            setLogLevel(com.kernelflux.aether.log.spi.LogLevel.DEBUG)
+            setLogLevel(com.kernelflux.aether.log.api.LogLevel.DEBUG)
             setEnabled(true)
         }
     }

@@ -1,4 +1,4 @@
-package com.kernelflux.aether.imageloader.spi
+package com.kernelflux.aether.imageloader.api
 
 import android.app.Activity
 import android.content.Context
