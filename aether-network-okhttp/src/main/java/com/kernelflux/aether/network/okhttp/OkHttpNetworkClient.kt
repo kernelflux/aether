@@ -5,6 +5,8 @@ import com.google.gson.Gson
 import com.kernelflux.aether.network.api.CompressionAlgorithm
 import com.kernelflux.aether.network.api.DeviceInfo
 import com.kernelflux.aether.network.api.HttpMethod
+import com.kernelflux.aether.network.api.CacheEntry
+import com.kernelflux.aether.network.api.CacheStrategy
 import com.kernelflux.aether.network.api.INetworkClient
 import com.kernelflux.aether.network.api.NetworkCallback
 import com.kernelflux.aether.network.api.NetworkConfig
@@ -33,7 +35,12 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSession
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 /**
  * OkHttp 网络客户端实现
@@ -50,74 +57,141 @@ import java.security.cert.X509Certificate
  */
 @FluxService(interfaceClass = INetworkClient::class)
 class OkHttpNetworkClient : INetworkClient {
-    private val okHttpClientRef = AtomicReference<OkHttpClient>()
-    private val configRef = AtomicReference<NetworkConfig>()
+    
+    companion object {
+        // 使用静态变量存储初始化状态，确保所有实例共享
+        private val okHttpClientRef = AtomicReference<OkHttpClient>()
+        private val configRef = AtomicReference<NetworkConfig>()
+        private val networkStateManagerRef = AtomicReference<NetworkStateManager>()
+        private val cookieJarRef = AtomicReference<PersistentCookieJar>()
+        private val cacheDirRef = AtomicReference<File>()
+        private val scheduledExecutor: ScheduledExecutorService =
+            Executors.newSingleThreadScheduledExecutor()
+    }
+    
     private val gson = Gson()
     private val activeCalls = ConcurrentHashMap<Any, MutableList<Call>>()
     private val networkStateListeners = CopyOnWriteArrayList<NetworkStateListener>()
     private val networkStateRef = AtomicReference<NetworkState>(NetworkState.AVAILABLE)
-    private val networkStateManagerRef = AtomicReference<NetworkStateManager>()
-    private val cookieJarRef = AtomicReference<PersistentCookieJar>()
-    private val cacheDirRef = AtomicReference<File>()
-    private val scheduledExecutor: ScheduledExecutorService =
-        Executors.newSingleThreadScheduledExecutor()
-
-    /**
-     * 初始化网络客户端（带缓存目录）
-     * @param config 网络配置
-     * @param cacheDir 缓存目录（用于 OkHttp Cache 和 Cookie 存储）
-     */
-    fun init(
-        context: Context,
-        config: NetworkConfig,
-        cacheDir: File? = null
-    ) {
-        cacheDirRef.set(cacheDir)
-
-        val appCxt = context.applicationContext ?: context
-        init(appCxt, config)
-    }
 
     override fun init(context: Context, config: NetworkConfig) {
-        configRef.set(config)
+        android.util.Log.d("OkHttpNetworkClient", "init() called with context: ${context.javaClass.simpleName}, config: ${config.baseUrl}, instance: ${this.hashCode()}")
+        
+        try {
+            // 如果用户没有提供默认实现，创建默认的 WeakNetworkHandler 和 RequestOptimizer
+            val enhancedConfig = if (config.weakNetworkHandler == null || config.requestOptimizer == null) {
+                val qualityDetector = config.networkQualityDetector 
+                    ?: DefaultNetworkQualityDetector(context)
+                val deviceDetector = config.devicePerformanceDetector 
+                    ?: DefaultDevicePerformanceDetector(context)
+                val requestOptimizer = config.requestOptimizer 
+                    ?: DefaultRequestOptimizer()
+                val weakNetworkHandler = config.weakNetworkHandler 
+                    ?: DefaultWeakNetworkHandler(
+                        qualityDetector = qualityDetector,
+                        deviceDetector = deviceDetector,
+                        requestOptimizer = requestOptimizer,
+                        romHandler = config.romCompatibilityHandler
+                    )
+                
+                // 创建新的配置，包含默认实现
+                val builder = NetworkConfig.builder()
+                    .baseUrl(config.baseUrl)
+                    .connectTimeout(config.connectTimeout)
+                    .readTimeout(config.readTimeout)
+                    .writeTimeout(config.writeTimeout)
+                    .followRedirects(config.followRedirects)
+                    .enableLogging(config.enableLogging)
+                    .enableCookies(config.enableCookies)
+                    .cacheDir(config.cacheDir)
+                    .defaultHeaders(config.defaultHeaders)
+                    .defaultCacheStrategy(config.defaultCacheStrategy)
+                    .weakNetworkHandler(weakNetworkHandler)
+                    .requestOptimizer(requestOptimizer)
+                    .networkQualityDetector(qualityDetector)
+                    .devicePerformanceDetector(deviceDetector)
+                
+                // 可选参数
+                config.defaultRetryStrategy?.let { builder.defaultRetryStrategy(it) }
+                config.defaultDataConverter?.let { builder.defaultDataConverter(it) }
+                config.networkStateManager?.let { builder.networkStateManager(it) }
+                config.networkStrategy?.let { builder.networkStrategy(it) }
+                config.certificateValidator?.let { builder.certificateValidator(it) }
+                config.dnsResolver?.let { builder.dnsResolver(it) }
+                config.cache?.let { builder.cache(it) }
+                config.romCompatibilityHandler?.let { builder.romCompatibilityHandler(it) }
+                
+                // 拦截器
+                config.interceptors.forEach { builder.addInterceptor(it) }
+                config.networkInterceptors.forEach { builder.addNetworkInterceptor(it) }
+                
+                builder.build()
+            } else {
+                config
+            }
+            
+            configRef.set(enhancedConfig)
+            
+            // 设置缓存目录（从 enhancedConfig 中获取，如果没有则使用应用缓存目录）
+            val configuredCacheDir = enhancedConfig.cacheDir ?: run {
+                val appContext = context.applicationContext ?: context
+                File(appContext.cacheDir, "aether_network")
+            }
+            configuredCacheDir.mkdirs()
+            cacheDirRef.set(configuredCacheDir)
+            
+            android.util.Log.d("OkHttpNetworkClient", "configRef.set() completed, cacheDir: ${configuredCacheDir.absolutePath}, instance: ${this.hashCode()}")
 
-        // 初始化网络状态管理器
-        val stateManager = config.networkStateManager ?: NetworkStateManagerFactory.create(context)
-        networkStateManagerRef.set(stateManager)
+            // 初始化网络状态管理器
+            val stateManager = try {
+                enhancedConfig.networkStateManager ?: NetworkStateManagerFactory.create(context)
+            } catch (e: Exception) {
+                android.util.Log.e("OkHttpNetworkClient", "Failed to create NetworkStateManager", e)
+                // 如果创建失败，使用一个简单的实现（不监听网络状态）
+                null
+            }
+            if (stateManager != null) {
+                networkStateManagerRef.set(stateManager)
+                android.util.Log.d("OkHttpNetworkClient", "networkStateManager initialized")
+            } else {
+                android.util.Log.w("OkHttpNetworkClient", "NetworkStateManager is null, network state monitoring disabled")
+            }
 
         // 初始化当前网络状态
-        try {
-            val currentState = stateManager.getCurrentState()
-            networkStateRef.set(currentState)
-        } catch (_: Exception) {
-        }
+        stateManager?.let { manager ->
+            try {
+                val currentState = manager.getCurrentState()
+                networkStateRef.set(currentState)
+            } catch (_: Exception) {
+            }
 
-        // 开始监听网络状态
-        try {
-            stateManager.startMonitoring()
-            // 添加内部监听器，同步网络状态
-            stateManager.addListener(object : NetworkStateListener {
-                override fun onNetworkStateChanged(oldState: NetworkState, newState: NetworkState) {
-                    try {
-                        networkStateRef.set(newState)
+            // 开始监听网络状态
+            try {
+                manager.startMonitoring()
+                // 添加内部监听器，同步网络状态
+                manager.addListener(object : NetworkStateListener {
+                    override fun onNetworkStateChanged(oldState: NetworkState, newState: NetworkState) {
+                        try {
+                            networkStateRef.set(newState)
 
-                        // 通知所有外部监听器（使用快照避免并发修改）
-                        val snapshot = ArrayList(networkStateListeners)
-                        snapshot.forEach { listener ->
-                            try {
-                                listener.onNetworkStateChanged(oldState, newState)
-                            } catch (_: Exception) {
+                            // 通知所有外部监听器（使用快照避免并发修改）
+                            val snapshot = ArrayList(networkStateListeners)
+                            snapshot.forEach { listener ->
+                                try {
+                                    listener.onNetworkStateChanged(oldState, newState)
+                                } catch (_: Exception) {
+                                }
                             }
+                        } catch (_: Exception) {
                         }
-                    } catch (_: Exception) {
                     }
-                }
-            })
-        } catch (_: Exception) {
+                })
+            } catch (_: Exception) {
+            }
         }
 
         // 根据弱网和设备信息优化连接池和超时
-        val weakHandler = config.weakNetworkHandler
+        val weakHandler = enhancedConfig.weakNetworkHandler
         val connectionPoolSize = weakHandler?.getSuggestedConnectionPoolSize() ?: 5
         val connectionPool = ConnectionPool(connectionPoolSize, 5, TimeUnit.MINUTES)
 
@@ -143,11 +217,14 @@ class OkHttpNetworkClient : INetworkClient {
             // 启用 HTTP/2（如果弱网处理器建议）
             .protocols(listOf(Protocol.HTTP_2, Protocol.HTTP_1_1))
 
-        // 添加拦截器
+        // 添加应用层拦截器
+        // 特点：在重定向和重试之前执行，即使从缓存返回也会执行
         config.interceptors.forEach { interceptor ->
             builder.addInterceptor(OkHttpInterceptorAdapter(interceptor, config))
         }
 
+        // 添加网络层拦截器
+        // 特点：在发送网络请求之前执行，只有真正的网络请求才会执行
         config.networkInterceptors.forEach { interceptor ->
             builder.addNetworkInterceptor(OkHttpInterceptorAdapter(interceptor, config))
         }
@@ -166,44 +243,169 @@ class OkHttpNetworkClient : INetworkClient {
             builder.dns(OkHttpDnsAdapter(config.dnsResolver))
         }
 
-        // 证书校验
+        // 证书校验（完整实现：X509TrustManager + HostnameVerifier）
         config.certificateValidator?.let { validator ->
-            builder.hostnameVerifier { hostname, session ->
-                try {
-                    val certificates = session.peerCertificates.mapNotNull {
-                        it as? X509Certificate
-                    }.toTypedArray()
-                    validator.validate(certificates, hostname)
-                } catch (e: Exception) {
-                    false
+            try {
+                // 创建自定义 TrustManager（用于验证证书链）
+                val trustManager = object : X509TrustManager {
+                    override fun checkClientTrusted(
+                        chain: Array<out X509Certificate>?,
+                        authType: String?
+                    ) {
+                        // 客户端证书校验（通常不需要）
+                    }
+
+                    override fun checkServerTrusted(
+                        chain: Array<out X509Certificate>?,
+                        authType: String?
+                    ) {
+                        // 服务器证书校验
+                        if (chain == null || chain.isEmpty()) {
+                            throw CertificateException("Certificate chain is empty")
+                        }
+                        
+                        // 使用自定义验证器验证证书链（不验证 hostname，hostname 在 HostnameVerifier 中验证）
+                        // 这里可以添加额外的证书链验证逻辑
+                        val chainArray = Array(chain.size) { chain[it] }
+                        val isValid = try {
+                            validator.validate(chainArray, "")
+                        } catch (e: Exception) {
+                            false
+                        }
+                        
+                        if (!isValid) {
+                            throw CertificateException("Certificate validation failed")
+                        }
+                    }
+
+                    override fun getAcceptedIssuers(): Array<X509Certificate> {
+                        return arrayOf()
+                    }
                 }
+
+                // 创建自定义 HostnameVerifier（用于验证 hostname 和证书）
+                // OkHttp 使用 javax.net.ssl.HostnameVerifier
+                val hostnameVerifier = javax.net.ssl.HostnameVerifier { hostname, session ->
+                    try {
+                        // 从 SSLSession 获取证书
+                        val peerCertificates = try {
+                            session.peerCertificates
+                        } catch (e: Exception) {
+                            null
+                        }
+                        
+                        if (peerCertificates == null) {
+                            false
+                        } else {
+                            val certificates = peerCertificates.mapNotNull { cert ->
+                                cert as? X509Certificate
+                            }.toTypedArray()
+                            
+                            if (certificates.isEmpty()) {
+                                false
+                            } else {
+                                // 使用自定义验证器验证证书和主机名
+                                validator.validate(certificates, hostname)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("OkHttpNetworkClient", "Certificate validation failed", e)
+                        false
+                    }
+                }
+
+                // 配置 SSLContext（用于自定义 TrustManager）
+                val sslContext = SSLContext.getInstance("TLS")
+                sslContext.init(null, arrayOf<TrustManager>(trustManager), java.security.SecureRandom())
+                
+                builder.sslSocketFactory(sslContext.socketFactory, trustManager)
+                builder.hostnameVerifier(hostnameVerifier)
+            } catch (e: Exception) {
+                android.util.Log.e("OkHttpNetworkClient", "Failed to configure certificate validator", e)
+                // 如果配置失败，使用默认的证书验证（更安全）
             }
         }
 
         // Cookie - 使用持久化 Cookie 管理器
         if (config.enableCookies) {
-            val cookieJar = cookieJarRef.get() ?: run {
-                // 如果没有提供 CookieJar，创建一个基于文件的持久化实现
-                val cookieDir =
-                    cacheDir ?: File(System.getProperty("java.io.tmpdir"), "aether_cookies")
-                cookieDir.mkdirs()
-                val cookieFile = File(cookieDir, "cookies.dat")
-                val cookieStore = FileCookieStore(cookieFile)
-                val jar = PersistentCookieJar(cookieStore)
+            try {
+                val cookieJar = cookieJarRef.get() ?: run {
+                    // 如果没有提供 CookieJar，创建一个基于文件的持久化实现
+                    val cookieDir =
+                        cacheDir ?: File(System.getProperty("java.io.tmpdir"), "aether_cookies")
+                    cookieDir.mkdirs()
+                    val cookieFile = File(cookieDir, "cookies.dat")
+                    val cookieStore = FileCookieStore(cookieFile)
+                    val jar = PersistentCookieJar(cookieStore)
 
-                // 定期清理过期 Cookie（每小时）
-                scheduledExecutor.scheduleWithFixedDelay(
-                    { jar.evictExpired() },
-                    1, 1, TimeUnit.HOURS
-                )
+                    // 定期清理过期 Cookie（每小时）
+                    scheduledExecutor.scheduleWithFixedDelay(
+                        { jar.evictExpired() },
+                        1, 1, TimeUnit.HOURS
+                    )
 
-                cookieJarRef.set(jar)
-                jar
+                    cookieJarRef.set(jar)
+                    jar
+                }
+                builder.cookieJar(cookieJar)
+                android.util.Log.d("OkHttpNetworkClient", "CookieJar configured successfully")
+            } catch (e: Exception) {
+                android.util.Log.w("OkHttpNetworkClient", "Failed to configure CookieJar, continuing without cookies", e)
+                // Cookie 配置失败不影响整体初始化，继续执行
             }
-            builder.cookieJar(cookieJar)
         }
 
-        okHttpClientRef.set(builder.build())
+        // 构建并设置 OkHttpClient（确保即使出错也能设置）
+        android.util.Log.d("OkHttpNetworkClient", "Building OkHttpClient...")
+        try {
+            val okHttpClient = builder.build()
+            okHttpClientRef.set(okHttpClient)
+            android.util.Log.d("OkHttpNetworkClient", "okHttpClientRef.set() completed, client initialized successfully")
+        } catch (e: Exception) {
+            android.util.Log.e("OkHttpNetworkClient", "Failed to build OkHttpClient, trying fallback", e)
+            // 如果构建失败，尝试使用最小配置构建
+            try {
+                val fallbackClient = OkHttpClient.Builder()
+                    .connectTimeout(config.connectTimeout, TimeUnit.MILLISECONDS)
+                    .readTimeout(config.readTimeout, TimeUnit.MILLISECONDS)
+                    .writeTimeout(config.writeTimeout, TimeUnit.MILLISECONDS)
+                    .build()
+                okHttpClientRef.set(fallbackClient)
+                android.util.Log.d("OkHttpNetworkClient", "Fallback OkHttpClient set successfully")
+            } catch (e2: Exception) {
+                android.util.Log.e("OkHttpNetworkClient", "Failed to build fallback OkHttpClient, using basic client", e2)
+                // 如果还是失败，至少设置一个基本的客户端，确保不会为 null
+                okHttpClientRef.set(OkHttpClient())
+                android.util.Log.d("OkHttpNetworkClient", "Basic OkHttpClient set as fallback")
+            }
+            // 不再抛出异常，确保初始化完成
+            android.util.Log.w("OkHttpNetworkClient", "OkHttpClient built with fallback, but original error was: ${e.message}")
+        }
+        
+        // 验证初始化是否成功
+        val finalClient = okHttpClientRef.get()
+        val finalConfig = configRef.get()
+        android.util.Log.d("OkHttpNetworkClient", "init() completed. client=${finalClient != null}, config=${finalConfig != null}")
+        
+        } catch (e: Exception) {
+            android.util.Log.e("OkHttpNetworkClient", "init() failed with exception", e)
+            // 即使出错，也尝试设置一个基本的客户端和配置，避免后续调用失败
+            if (okHttpClientRef.get() == null) {
+                try {
+                    okHttpClientRef.set(OkHttpClient())
+                    android.util.Log.w("OkHttpNetworkClient", "Set basic OkHttpClient after exception")
+                } catch (_: Exception) {
+                }
+            }
+            if (configRef.get() == null) {
+                try {
+                    configRef.set(config)
+                    android.util.Log.w("OkHttpNetworkClient", "Set config after exception")
+                } catch (_: Exception) {
+                }
+            }
+            throw e
+        }
     }
 
     override fun <T> execute(
@@ -214,48 +416,135 @@ class OkHttpNetworkClient : INetworkClient {
         val client = okHttpClientRef.get()
         val config = configRef.get()
 
+        android.util.Log.d("OkHttpNetworkClient", "execute() called, instance: ${this.hashCode()}, client=${client != null}, config=${config != null}")
+
         if (client == null || config == null) {
-            callback.onError(NetworkException.UnknownException("Network client not initialized"))
+            android.util.Log.e("OkHttpNetworkClient", "execute() called but client not initialized. instance: ${this.hashCode()}, client=${client != null}, config=${config != null}")
+            callback.onError(NetworkException.UnknownException("Network client not initialized. Please call init() first."))
             return
         }
 
-        // 检查网络状态
-        val networkState = getNetworkState()
-        if (networkState == NetworkState.NONE) {
-            val strategy = request.networkStrategy ?: config.networkStrategy
-            when (val result = strategy.handleNoNetwork(request)) {
-                is NoNetworkResult.UseCache -> {
-                    // 尝试从缓存获取
-                    handleCacheResponse(request, responseType, callback, config)
-                    return
+        // 获取缓存策略
+        val cacheStrategy = request.cacheStrategy ?: config.defaultCacheStrategy
+        
+        // 根据缓存策略处理请求
+        when (cacheStrategy) {
+            CacheStrategy.NO_CACHE -> {
+                // 不使用缓存，直接请求网络
+                val optimizedRequest = optimizeRequestForWeakNetwork(request, getNetworkState(), config)
+                val okHttpRequest = buildOkHttpRequest(optimizedRequest, config, cacheStrategy)
+                executeWithRetry(client, okHttpRequest, optimizedRequest, responseType, callback, config)
+            }
+            
+            CacheStrategy.CACHE_ONLY -> {
+                // 仅使用缓存，如果缓存不存在则失败
+                handleCacheResponse(request, responseType, callback, config) {
+                    callback.onError(NetworkException.ConnectionException("Cache not available"))
                 }
-
-                is NoNetworkResult.QueueRequest -> {
-                    // 加入队列，网络恢复后重试
-                    callback.onError(NetworkException.ConnectionException("No network available"))
-                    return
+            }
+            
+            CacheStrategy.CACHE_FIRST -> {
+                // 优先使用缓存，缓存不存在则请求网络
+                val cacheResponse = getCacheResponse(request, responseType, config)
+                if (cacheResponse != null) {
+                    callback.onSuccess(cacheResponse)
+                } else {
+                    // 缓存不存在，请求网络
+                    val optimizedRequest = optimizeRequestForWeakNetwork(request, getNetworkState(), config)
+                    val okHttpRequest = buildOkHttpRequest(optimizedRequest, config, cacheStrategy)
+                    executeWithRetry(client, okHttpRequest, optimizedRequest, responseType, callback, config)
                 }
-
-                is NoNetworkResult.Fail -> {
-                    callback.onError(NetworkException.ConnectionException("No network available"))
-                    return
+            }
+            
+            CacheStrategy.NETWORK_FIRST -> {
+                // 优先请求网络，失败则使用缓存
+                val networkState = getNetworkState()
+                if (networkState == NetworkState.NONE) {
+                    // 无网络，尝试使用缓存
+                    handleCacheResponse(request, responseType, callback, config) {
+                        callback.onError(NetworkException.ConnectionException("No network and no cache available"))
+                    }
+                } else {
+                    // 有网络，优先请求网络，失败则使用缓存
+                    val optimizedRequest = optimizeRequestForWeakNetwork(request, networkState, config)
+                    val okHttpRequest = buildOkHttpRequest(optimizedRequest, config, cacheStrategy)
+                    executeWithRetryAndCacheFallback(
+                        client, okHttpRequest, optimizedRequest, responseType, callback, config
+                    )
                 }
-
-                is NoNetworkResult.Custom -> {
-                    result.action()
-                    return
+            }
+            
+            CacheStrategy.CACHE_AND_NETWORK -> {
+                // 同时请求网络和缓存，优先返回缓存，网络返回后更新缓存
+                val cacheResponse = getCacheResponse(request, responseType, config)
+                if (cacheResponse != null) {
+                    // 先返回缓存
+                    callback.onSuccess(cacheResponse)
+                }
+                
+                // 同时请求网络（如果网络可用）
+                val networkState = getNetworkState()
+                if (networkState != NetworkState.NONE) {
+                    val optimizedRequest = optimizeRequestForWeakNetwork(request, networkState, config)
+                    val okHttpRequest = buildOkHttpRequest(optimizedRequest, config, cacheStrategy)
+                    executeWithRetry(client, okHttpRequest, optimizedRequest, responseType, object : NetworkCallback<T> {
+                        override fun onSuccess(response: Response<T>) {
+                            // 网络请求成功，更新缓存（如果之前返回了缓存，这里会再次回调）
+                            // 为了避免重复回调，只在之前没有缓存时才回调
+                            if (cacheResponse == null) {
+                                callback.onSuccess(response)
+                            }
+                            // 注意：这里会更新缓存（在 convertResponse 中处理）
+                        }
+                        
+                        override fun onError(exception: NetworkException) {
+                            // 网络请求失败，如果之前没有返回缓存，则返回错误
+                            if (cacheResponse == null) {
+                                callback.onError(exception)
+                            }
+                        }
+                    }, config)
+                } else if (cacheResponse == null) {
+                    // 无网络且无缓存，返回错误
+                    callback.onError(NetworkException.ConnectionException("No network and no cache available"))
+                }
+            }
+            
+            CacheStrategy.CACHE_IF_AVAILABLE -> {
+                // 仅当缓存过期时才请求网络
+                val cache = config.cache
+                if (cache != null) {
+                    val cacheAdapter = OkHttpCacheAdapter(cache)
+                    val cacheKey = cacheAdapter.keyGenerator.generate(request)
+                    val cacheEntry = cache.get(cacheKey)
+                    
+                    if (cacheEntry != null && cacheEntry.isValid()) {
+                        // 缓存有效，直接返回
+                        val cacheResponse = getCacheResponse(request, responseType, config)
+                        if (cacheResponse != null) {
+                            callback.onSuccess(cacheResponse)
+                            return
+                        }
+                    }
+                }
+                
+                // 缓存不存在或已过期，请求网络
+                val networkState = getNetworkState()
+                if (networkState == NetworkState.NONE) {
+                    // 无网络，尝试使用过期缓存
+                    val cacheResponse = getCacheResponse(request, responseType, config)
+                    if (cacheResponse != null) {
+                        callback.onSuccess(cacheResponse)
+                    } else {
+                        callback.onError(NetworkException.ConnectionException("No network and no cache available"))
+                    }
+                } else {
+                    val optimizedRequest = optimizeRequestForWeakNetwork(request, networkState, config)
+                    val okHttpRequest = buildOkHttpRequest(optimizedRequest, config, cacheStrategy)
+                    executeWithRetry(client, okHttpRequest, optimizedRequest, responseType, callback, config)
                 }
             }
         }
-
-        // 弱网优化（增强版）
-        val optimizedRequest = optimizeRequestForWeakNetwork(request, networkState, config)
-
-        // 构建 OkHttp 请求
-        val okHttpRequest = buildOkHttpRequest(optimizedRequest, config)
-
-        // 执行请求（带重试）
-        executeWithRetry(client, okHttpRequest, optimizedRequest, responseType, callback, config)
     }
 
     override fun <T> executeSync(
@@ -269,56 +558,140 @@ class OkHttpNetworkClient : INetworkClient {
             throw NetworkException.UnknownException("Network client not initialized")
         }
 
-        // 检查网络状态（使用策略获取，如果策略支持）
-        val strategy = request.networkStrategy ?: config.networkStrategy
-        val networkState = try {
-            strategy.getCurrentNetworkState()
-        } catch (e: Exception) {
-            // 异常处理，使用默认方法获取
-            getNetworkState()
-        }
+        // 获取缓存策略
+        val cacheStrategy = request.cacheStrategy ?: config.defaultCacheStrategy
+        val networkState = getNetworkState()
 
-        if (networkState == NetworkState.NONE) {
-            val result = try {
-                strategy.handleNoNetwork(request)
-            } catch (e: Exception) {
-                // 策略处理异常，返回失败而不是抛异常
-                NoNetworkResult.Fail
+        // 根据缓存策略处理请求
+        return when (cacheStrategy) {
+            CacheStrategy.NO_CACHE -> {
+                // 不使用缓存，直接请求网络
+                val optimizedRequest = optimizeRequestForWeakNetwork(request, networkState, config)
+                val okHttpRequest = buildOkHttpRequest(optimizedRequest, config, cacheStrategy)
+                try {
+                    val okHttpResponse = client.newCall(okHttpRequest).execute()
+                    convertResponse(okHttpResponse, optimizedRequest, responseType, config)
+                } catch (e: SocketTimeoutException) {
+                    throw NetworkException.TimeoutException("Request timeout", e)
+                } catch (e: IOException) {
+                    throw NetworkException.ConnectionException("Network error", e)
+                }
             }
-
-            when (result) {
-                is NoNetworkResult.UseCache -> {
-                    // 尝试从缓存获取
-                    return getCacheResponse(request, responseType, config)
+            
+            CacheStrategy.CACHE_ONLY -> {
+                // 仅使用缓存，如果缓存不存在则失败
+                getCacheResponse(request, responseType, config)
+                    ?: throw NetworkException.ConnectionException("Cache not available")
+            }
+            
+            CacheStrategy.CACHE_FIRST -> {
+                // 优先使用缓存，缓存不存在则请求网络
+                val cacheResponse = getCacheResponse(request, responseType, config)
+                if (cacheResponse != null) {
+                    cacheResponse
+                } else {
+                    // 缓存不存在，请求网络
+                    val optimizedRequest = optimizeRequestForWeakNetwork(request, networkState, config)
+                    val okHttpRequest = buildOkHttpRequest(optimizedRequest, config, cacheStrategy)
+                    try {
+                        val okHttpResponse = client.newCall(okHttpRequest).execute()
+                        convertResponse(okHttpResponse, optimizedRequest, responseType, config)
+                    } catch (e: SocketTimeoutException) {
+                        throw NetworkException.TimeoutException("Request timeout", e)
+                    } catch (e: IOException) {
+                        throw NetworkException.ConnectionException("Network error", e)
+                    }
+                }
+            }
+            
+            CacheStrategy.NETWORK_FIRST -> {
+                // 优先请求网络，失败则使用缓存
+                if (networkState == NetworkState.NONE) {
+                    // 无网络，尝试使用缓存
+                    getCacheResponse(request, responseType, config)
                         ?: throw NetworkException.ConnectionException("No network and no cache available")
+                } else {
+                    // 有网络，优先请求网络，失败则使用缓存
+                    val optimizedRequest = optimizeRequestForWeakNetwork(request, networkState, config)
+                    val okHttpRequest = buildOkHttpRequest(optimizedRequest, config, cacheStrategy)
+                    try {
+                        val okHttpResponse = client.newCall(okHttpRequest).execute()
+                        convertResponse(okHttpResponse, optimizedRequest, responseType, config)
+                    } catch (e: SocketTimeoutException) {
+                        // 超时，尝试使用缓存
+                        getCacheResponse(request, responseType, config)
+                            ?: throw NetworkException.TimeoutException("Request timeout", e)
+                    } catch (e: IOException) {
+                        // 网络错误，尝试使用缓存
+                        getCacheResponse(request, responseType, config)
+                            ?: throw NetworkException.ConnectionException("Network error", e)
+                    }
                 }
-
-                is NoNetworkResult.Fail -> {
-                    throw NetworkException.ConnectionException("No network available")
-                }
-
-                else -> throw NetworkException.ConnectionException("No network available")
             }
-        }
-
-        // 弱网优化（增强版）
-        val optimizedRequest = optimizeRequestForWeakNetwork(request, networkState, config)
-
-        // 构建 OkHttp 请求
-        val okHttpRequest = buildOkHttpRequest(optimizedRequest, config)
-
-        // 执行请求
-        return try {
-            val okHttpResponse = client.newCall(okHttpRequest).execute()
-            convertResponse(okHttpResponse, optimizedRequest, responseType, config)
-        } catch (e: SocketTimeoutException) {
-            throw NetworkException.TimeoutException("Request timeout", e)
-        } catch (e: IOException) {
-            throw NetworkException.ConnectionException("Network error", e)
-        } catch (e: NetworkException) {
-            throw e
-        } catch (e: Exception) {
-            throw NetworkException.UnknownException("Unknown error", e)
+            
+            CacheStrategy.CACHE_AND_NETWORK -> {
+                // 同时请求网络和缓存，优先返回缓存，网络返回后更新缓存
+                val cacheResponse = getCacheResponse(request, responseType, config)
+                if (cacheResponse != null) {
+                    // 先返回缓存
+                    cacheResponse
+                } else {
+                    // 无缓存，请求网络
+                    if (networkState == NetworkState.NONE) {
+                        throw NetworkException.ConnectionException("No network and no cache available")
+                    }
+                    val optimizedRequest = optimizeRequestForWeakNetwork(request, networkState, config)
+                    val okHttpRequest = buildOkHttpRequest(optimizedRequest, config, cacheStrategy)
+                    try {
+                        val okHttpResponse = client.newCall(okHttpRequest).execute()
+                        convertResponse(okHttpResponse, optimizedRequest, responseType, config)
+                    } catch (e: SocketTimeoutException) {
+                        throw NetworkException.TimeoutException("Request timeout", e)
+                    } catch (e: IOException) {
+                        throw NetworkException.ConnectionException("Network error", e)
+                    }
+                }
+            }
+            
+            CacheStrategy.CACHE_IF_AVAILABLE -> {
+                // 仅当缓存过期时才请求网络
+                val cache = config.cache
+                if (cache != null) {
+                    val cacheAdapter = OkHttpCacheAdapter(cache)
+                    val cacheKey = cacheAdapter.keyGenerator.generate(request)
+                    val cacheEntry = cache.get(cacheKey)
+                    
+                    if (cacheEntry != null && cacheEntry.isValid()) {
+                        // 缓存有效，直接返回
+                        val cacheResponse = getCacheResponse(request, responseType, config)
+                        if (cacheResponse != null) {
+                            return cacheResponse
+                        }
+                    }
+                }
+                
+                // 缓存不存在或已过期，请求网络
+                if (networkState == NetworkState.NONE) {
+                    // 无网络，尝试使用过期缓存
+                    val cacheResponse = getCacheResponse(request, responseType, config)
+                    if (cacheResponse != null) {
+                        cacheResponse
+                    } else {
+                        throw NetworkException.ConnectionException("No network and no cache available")
+                    }
+                } else {
+                    val optimizedRequest = optimizeRequestForWeakNetwork(request, networkState, config)
+                    val okHttpRequest = buildOkHttpRequest(optimizedRequest, config, cacheStrategy)
+                    try {
+                        val okHttpResponse = client.newCall(okHttpRequest).execute()
+                        convertResponse(okHttpResponse, optimizedRequest, responseType, config)
+                    } catch (e: SocketTimeoutException) {
+                        throw NetworkException.TimeoutException("Request timeout", e)
+                    } catch (e: IOException) {
+                        throw NetworkException.ConnectionException("Network error", e)
+                    }
+                }
+            }
         }
     }
 
@@ -370,7 +743,7 @@ class OkHttpNetworkClient : INetworkClient {
     // ========== 私有方法 ==========
 
     /**
-     * 弱网优化请求
+     * 弱网优化请求（完整实现）
      */
     private fun optimizeRequestForWeakNetwork(
         request: com.kernelflux.aether.network.api.Request,
@@ -379,16 +752,52 @@ class OkHttpNetworkClient : INetworkClient {
     ): com.kernelflux.aether.network.api.Request {
         var optimizedRequest = request
         val weakHandler = config.weakNetworkHandler
+        val requestOptimizer = config.requestOptimizer
         val romHandler = config.romCompatibilityHandler
 
-        // 1. 使用弱网处理器优化
-        if (networkState == NetworkState.WEAK && weakHandler != null) {
-            optimizedRequest = weakHandler.optimizeRequest(optimizedRequest)
+        // 1. 获取网络质量指标和设备信息
+        val metrics = weakHandler?.getNetworkMetrics() ?: com.kernelflux.aether.network.api.NetworkMetrics()
+        val deviceInfo = weakHandler?.getDeviceInfo() ?: DeviceInfo()
+        val isWeakNetwork = networkState == NetworkState.WEAK || weakHandler?.isWeakNetwork() == true
+
+        // 2. 使用 RequestOptimizer 优化请求（如果提供）
+        if (requestOptimizer != null && isWeakNetwork) {
+            optimizedRequest = requestOptimizer.optimize(optimizedRequest, metrics, deviceInfo)
+            
+            // 2.1 应用超时优化
+            val optimizedTimeout = requestOptimizer.getOptimizedTimeout(
+                optimizedRequest,
+                metrics,
+                optimizedRequest.timeout ?: config.connectTimeout
+            )
+            optimizedRequest = optimizedRequest.copy(timeout = optimizedTimeout)
+            
+            // 2.2 应用请求降级
+            if (requestOptimizer.shouldDegradeRequest(optimizedRequest, metrics)) {
+                optimizedRequest = requestOptimizer.degradeRequest(optimizedRequest)
+            }
         }
 
-        // 2. 添加压缩支持
-        if (weakHandler?.shouldCompressRequest() == true) {
-            val algorithm = weakHandler.getCompressionAlgorithm()
+        // 3. 使用 WeakNetworkHandler 优化请求
+        if (isWeakNetwork && weakHandler != null) {
+            optimizedRequest = weakHandler.optimizeRequest(optimizedRequest)
+            
+            // 3.1 应用超时调整
+            if (weakHandler.shouldReduceTimeout()) {
+                val weakNetworkTimeout = weakHandler.getWeakNetworkTimeout()
+                optimizedRequest = optimizedRequest.copy(timeout = weakNetworkTimeout)
+            }
+        }
+
+        // 4. 添加压缩支持（优先使用 RequestOptimizer，否则使用 WeakNetworkHandler）
+        val shouldCompress = if (requestOptimizer != null && isWeakNetwork) {
+            requestOptimizer.shouldCompressRequest(optimizedRequest, metrics)
+        } else {
+            weakHandler?.shouldCompressRequest() == true
+        }
+        
+        if (shouldCompress) {
+            val algorithm = weakHandler?.getCompressionAlgorithm() ?: CompressionAlgorithm.GZIP
             val acceptEncoding = when (algorithm) {
                 CompressionAlgorithm.GZIP -> "gzip, deflate"
                 CompressionAlgorithm.BROTLI -> "br, gzip, deflate"
@@ -404,12 +813,24 @@ class OkHttpNetworkClient : INetworkClient {
             }
         }
 
-        // 3. ROM 兼容性处理
+        // 5. ROM 兼容性处理
         if (romHandler != null) {
-            val deviceInfo = weakHandler?.getDeviceInfo() ?: DeviceInfo()
             optimizedRequest = romHandler.handleBackgroundRestriction(
                 optimizedRequest,
                 deviceInfo.isBackground
+            )
+        }
+
+        // 6. 添加弱网标识头（用于服务端识别）
+        if (isWeakNetwork) {
+            val qualityScore = weakHandler?.getNetworkQuality() ?: 50
+            val networkQualityHeader = mapOf(
+                "X-Network-Quality" to qualityScore.toString(),
+                "X-Device-Performance" to if (deviceInfo.isLowEndDevice) "low" else "normal",
+                "X-Network-State" to networkState.name
+            )
+            optimizedRequest = optimizedRequest.copy(
+                headers = optimizedRequest.headers + networkQualityHeader
             )
         }
 
@@ -512,7 +933,8 @@ class OkHttpNetworkClient : INetworkClient {
 
     private fun buildOkHttpRequest(
         request: com.kernelflux.aether.network.api.Request,
-        config: NetworkConfig
+        config: NetworkConfig,
+        cacheStrategy: CacheStrategy = CacheStrategy.NO_CACHE
     ): Request {
         val fullUrl = request.buildUrl(config.baseUrl)
         val urlBuilder = fullUrl.toHttpUrlOrNull()?.newBuilder()
@@ -556,6 +978,40 @@ class OkHttpNetworkClient : INetworkClient {
 
         // 设置标签
         request.tag?.let { builder.tag(it) }
+        
+        // 根据缓存策略设置 Cache-Control 头
+        when (cacheStrategy) {
+            CacheStrategy.NO_CACHE -> {
+                builder.cacheControl(okhttp3.CacheControl.FORCE_NETWORK)
+            }
+            CacheStrategy.CACHE_ONLY -> {
+                builder.cacheControl(okhttp3.CacheControl.FORCE_CACHE)
+            }
+            CacheStrategy.CACHE_FIRST -> {
+                // 允许使用缓存，但优先网络
+                builder.cacheControl(okhttp3.CacheControl.Builder()
+                    .maxAge(0, TimeUnit.SECONDS)
+                    .build())
+            }
+            CacheStrategy.NETWORK_FIRST -> {
+                // 优先网络，但允许缓存
+                builder.cacheControl(okhttp3.CacheControl.Builder()
+                    .maxAge(60, TimeUnit.SECONDS)
+                    .build())
+            }
+            CacheStrategy.CACHE_AND_NETWORK -> {
+                // 允许缓存和网络
+                builder.cacheControl(okhttp3.CacheControl.Builder()
+                    .maxAge(60, TimeUnit.SECONDS)
+                    .build())
+            }
+            CacheStrategy.CACHE_IF_AVAILABLE -> {
+                // 仅当缓存过期时才请求网络
+                builder.cacheControl(okhttp3.CacheControl.Builder()
+                    .maxStale(Int.MAX_VALUE, TimeUnit.SECONDS)
+                    .build())
+            }
+        }
 
         return builder.build()
     }
@@ -569,12 +1025,26 @@ class OkHttpNetworkClient : INetworkClient {
         return when (body) {
             is com.kernelflux.aether.network.api.RequestBody.JsonBody -> {
                 val converter = request.dataConverter ?: config.defaultDataConverter
+                val contentType = converter?.getContentType() ?: "application/json; charset=utf-8"
                 val json = if (converter != null) {
                     String(converter.toBytes(body.data))
                 } else {
                     gson.toJson(body.data)
                 }
-                json.toRequestBody("application/json; charset=utf-8".toMediaType())
+                json.toRequestBody(contentType.toMediaType())
+            }
+            
+            is com.kernelflux.aether.network.api.RequestBody.ProtobufBody -> {
+                val converter = request.dataConverter ?: config.defaultDataConverter
+                val contentType = converter?.getContentType() ?: "application/x-protobuf"
+                val protobufBytes = if (converter != null) {
+                    // 如果提供了转换器，使用转换器（支持 Message 对象）
+                    converter.toBytes(body.data)
+                } else {
+                    // 如果没有转换器，直接使用字节数组
+                    body.data
+                }
+                protobufBytes.toRequestBody(contentType.toMediaType())
             }
 
             is com.kernelflux.aether.network.api.RequestBody.FormBody -> {
@@ -641,12 +1111,6 @@ class OkHttpNetworkClient : INetworkClient {
                 }
             }
 
-            is com.kernelflux.aether.network.api.RequestBody.ProtobufBody -> {
-                val contentType = "application/x-protobuf".toMediaTypeOrNull()
-                    ?: "application/octet-stream".toMediaType()
-                body.data.toRequestBody(contentType)
-            }
-
             is com.kernelflux.aether.network.api.RequestBody.EmptyBody -> null
         }
     }
@@ -699,19 +1163,18 @@ class OkHttpNetworkClient : INetworkClient {
         // 数据转换
         val converter = request.dataConverter ?: config.defaultDataConverter
         val data = try {
-            if (converter != null) {
+            if (decryptedBody.isEmpty()) {
+                null
+            } else if (converter != null) {
+                // 使用指定的转换器
                 converter.fromBytes(decryptedBody, responseType)
             } else {
-                // 默认使用 Gson
-                if (decryptedBody.isEmpty()) {
+                // 默认使用 Gson（JSON）
+                val jsonString = String(decryptedBody, Charsets.UTF_8)
+                if (jsonString.isBlank()) {
                     null
                 } else {
-                    val jsonString = String(decryptedBody, Charsets.UTF_8)
-                    if (jsonString.isBlank()) {
-                        null
-                    } else {
-                        gson.fromJson(jsonString, responseType)
-                    }
+                    gson.fromJson(jsonString, responseType)
                 }
             }
         } catch (e: Exception) {
@@ -719,7 +1182,7 @@ class OkHttpNetworkClient : INetworkClient {
             null
         }
 
-        return Response(
+        val response = Response(
             data = data,
             code = code,
             message = message,
@@ -728,13 +1191,81 @@ class OkHttpNetworkClient : INetworkClient {
             isFromCache = isFromCache,
             isSuccessful = code in 200..299 && data != null
         )
+        
+        // 保存响应到缓存（如果策略允许且响应成功）
+        if (!isFromCache && response.isSuccessful && data != null) {
+            val cacheStrategy = request.cacheStrategy ?: config.defaultCacheStrategy
+            if (cacheStrategy != CacheStrategy.NO_CACHE && cacheStrategy != CacheStrategy.CACHE_ONLY) {
+                try {
+                    saveResponseToCache(request, okHttpResponse, config, decryptedBody)
+                } catch (e: Exception) {
+                    // 缓存保存失败，不影响响应返回
+                    android.util.Log.w("OkHttpNetworkClient", "Failed to save response to cache", e)
+                }
+            }
+        }
+        
+        return response
+    }
+    
+    /**
+     * 保存响应到缓存
+     */
+    private fun saveResponseToCache(
+        request: com.kernelflux.aether.network.api.Request,
+        okHttpResponse: okhttp3.Response,
+        config: NetworkConfig,
+        bodyBytes: ByteArray
+    ) {
+        val cache = config.cache ?: return
+        val cacheAdapter = OkHttpCacheAdapter(cache)
+        val cacheKey = cacheAdapter.keyGenerator.generate(request)
+        
+        val headers = okHttpResponse.headers.toMultimap()
+        val ttl = getCacheTTL(okHttpResponse)
+        
+        val entry = CacheEntry(
+            data = bodyBytes,
+            headers = headers,
+            timestamp = System.currentTimeMillis(),
+            ttl = ttl,
+            etag = okHttpResponse.header("ETag"),
+            lastModified = okHttpResponse.header("Last-Modified")
+        )
+        
+        cache.put(cacheKey, entry)
+    }
+    
+    /**
+     * 从响应头获取缓存 TTL
+     */
+    private fun getCacheTTL(response: okhttp3.Response): Long {
+        val cacheControl = response.cacheControl
+        if (cacheControl.maxAgeSeconds > 0) {
+            return cacheControl.maxAgeSeconds * 1000L
+        }
+        
+        // 从 Expires 头获取
+        val expires = response.header("Expires")
+        if (expires != null) {
+            // 解析 Expires 头（简化处理，默认 1 小时）
+            return 3600_000L
+        }
+        
+        // 默认 TTL：1 小时
+        return 3600_000L
     }
 
+    /**
+     * 处理缓存响应
+     * @param onCacheNotFound 缓存不存在时的回调
+     */
     private fun <T> handleCacheResponse(
         request: com.kernelflux.aether.network.api.Request,
         responseType: Class<T>,
         callback: NetworkCallback<T>,
-        config: NetworkConfig
+        config: NetworkConfig,
+        onCacheNotFound: () -> Unit = {}
     ) {
         val cache = config.cache ?: return
         val cacheAdapter = OkHttpCacheAdapter(cache)
@@ -766,8 +1297,122 @@ class OkHttpNetworkClient : INetworkClient {
                 callback.onError(NetworkException.ParseException("Cache parse error", e))
             }
         } else {
-            callback.onError(NetworkException.ConnectionException("No network and no valid cache"))
+            onCacheNotFound()
         }
+    }
+    
+    /**
+     * 执行请求（带重试和缓存降级）
+     * 网络请求失败时，尝试使用缓存
+     */
+    private fun <T> executeWithRetryAndCacheFallback(
+        client: OkHttpClient,
+        okHttpRequest: Request,
+        request: com.kernelflux.aether.network.api.Request,
+        responseType: Class<T>,
+        callback: NetworkCallback<T>,
+        config: NetworkConfig
+    ) {
+        val retryStrategy = request.retryStrategy ?: config.defaultRetryStrategy
+        val tag = request.tag ?: Any()
+
+        // 保存 call 引用以便取消
+        val calls = activeCalls.getOrPut(tag) { mutableListOf() }
+
+        fun executeRequest(retryCount: Int) {
+            val call = client.newCall(okHttpRequest)
+            calls.add(call)
+
+            call.enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    calls.remove(call)
+
+                    val exception = when (e) {
+                        is SocketTimeoutException -> NetworkException.TimeoutException(
+                            "Request timeout",
+                            e
+                        )
+                        else -> NetworkException.ConnectionException("Network error", e)
+                    }
+
+                    // 检查是否需要重试
+                    val apiRequest = request
+                    if (retryStrategy != null && retryStrategy.shouldRetry(
+                            apiRequest,
+                            null,
+                            exception,
+                            retryCount
+                        )
+                    ) {
+                        val delay = retryStrategy.getRetryDelay(retryCount)
+                        Thread.sleep(delay)
+                        executeRequest(retryCount + 1)
+                    } else {
+                        // 重试失败，尝试使用缓存
+                        val cacheResponse = getCacheResponse(request, responseType, config)
+                        if (cacheResponse != null) {
+                            callback.onSuccess(cacheResponse)
+                        } else {
+                            callback.onError(exception)
+                        }
+                    }
+                }
+
+                override fun onResponse(call: Call, response: okhttp3.Response) {
+                    calls.remove(call)
+
+                    try {
+                        val apiResponse = convertResponse(response, request, responseType, config)
+
+                        // 检查是否需要重试（HTTP 错误）
+                        val apiRequest = request
+                        if (!apiResponse.isSuccessful && retryStrategy != null) {
+                            val exception = NetworkException.HttpException(
+                                apiResponse.code,
+                                apiResponse.message,
+                                apiResponse
+                            )
+
+                            if (retryStrategy.shouldRetry(
+                                    apiRequest,
+                                    apiResponse,
+                                    exception,
+                                    retryCount
+                                )
+                            ) {
+                                val delay = retryStrategy.getRetryDelay(retryCount)
+                                Thread.sleep(delay)
+                                executeRequest(retryCount + 1)
+                                return
+                            }
+                        }
+
+                        callback.onSuccess(apiResponse)
+                    } catch (e: NetworkException) {
+                        // 网络请求失败，尝试使用缓存
+                        val cacheResponse = getCacheResponse(request, responseType, config)
+                        if (cacheResponse != null) {
+                            callback.onSuccess(cacheResponse)
+                        } else {
+                            callback.onError(e)
+                        }
+                    } catch (e: Exception) {
+                        // 解析错误，尝试使用缓存
+                        val cacheResponse = getCacheResponse(request, responseType, config)
+                        if (cacheResponse != null) {
+                            callback.onSuccess(cacheResponse)
+                        } else {
+                            callback.onError(NetworkException.ParseException("Parse error", e))
+                        }
+                    } finally {
+                        // 确保 Response 被关闭
+                        response.close()
+                    }
+                }
+            })
+        }
+
+        executeRequest(0)
     }
 
     private fun <T> getCacheResponse(

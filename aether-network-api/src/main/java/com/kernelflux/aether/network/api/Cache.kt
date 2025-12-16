@@ -88,6 +88,31 @@ data class CacheEntry(
      * 是否有效（未过期）
      */
     fun isValid(): Boolean = !isExpired()
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as CacheEntry
+
+        if (timestamp != other.timestamp) return false
+        if (ttl != other.ttl) return false
+        if (!data.contentEquals(other.data)) return false
+        if (headers != other.headers) return false
+        if (etag != other.etag) return false
+        if (lastModified != other.lastModified) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = timestamp.hashCode()
+        result = 31 * result + ttl.hashCode()
+        result = 31 * result + data.contentHashCode()
+        result = 31 * result + headers.hashCode()
+        result = 31 * result + (etag?.hashCode() ?: 0)
+        result = 31 * result + (lastModified?.hashCode() ?: 0)
+        return result
+    }
 }
 
 /**

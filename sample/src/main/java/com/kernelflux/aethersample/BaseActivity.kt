@@ -6,6 +6,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowCompat
 
 /**
  * Base Activity with EdgeToEdge support
@@ -22,6 +23,11 @@ abstract class BaseActivity : AppCompatActivity() {
 
         // Enable EdgeToEdge
         enableEdgeToEdge()
+
+        // 设置状态栏字体为深色（黑色），适配白色背景
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = true
+        }
 
         // Set content view (must be called by subclass)
         setContentView(getContentResId())
@@ -48,7 +54,8 @@ abstract class BaseActivity : AppCompatActivity() {
             ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
                 val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-                v.setBackgroundResource(R.color.black)
+                // 移除黑色背景设置，让布局文件中的背景色生效
+                // v.setBackgroundResource(R.color.black)
                 insets
             }
         }

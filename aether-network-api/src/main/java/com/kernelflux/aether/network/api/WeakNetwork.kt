@@ -3,7 +3,6 @@ package com.kernelflux.aether.network.api
 /**
  * 弱网处理器
  * 用于在弱网环境下优化网络请求
- * 适配东南亚中低端机型和国内多厂商 ROM
  */
 interface WeakNetworkHandler {
     /**

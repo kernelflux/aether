@@ -1,7 +1,6 @@
 [versions]
 agp = "8.13.1"
-fluxRouterCompilerKsp = "0.0.2"
-fluxRouterCore = "0.0.2"
+fluxRouter = "0.0.3"
 #noinspection NewerVersionAvailable
 kotlin = "2.0.21"
 #noinspection GradleDependency
@@ -13,6 +12,7 @@ material = "1.13.0"
 activity = "1.12.1"
 constraintlayout = "2.2.1"
 #noinspection GradleDependency
+protobufJava = "4.33.2"
 recyclerview = "1.3.2"
 cardview = "1.0.0"
 # 网络库
@@ -30,6 +30,9 @@ glide-ksp = "4.16.0"
 # JSON解析
 #noinspection NewerVersionAvailable
 gson = "2.10.1"
+# KV 存储
+#noinspection NewerVersionAvailable
+mmkv = "1.3.14"
 
 fluxrouter = "0.0.2"
 mavencentraluploader = "1.0.10"
@@ -37,10 +40,12 @@ mavencentraluploader = "1.0.10"
 aether = "1.0.2"
 
 [libraries]
+aether-network-api = { module = "com.kernelflux.mobile:aether-network-api", version.ref = "aether" }
+aether-kv-api = { module = "com.kernelflux.mobile:aether-kv-api", version.ref = "aether" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
-flux-router-core = { module = "com.kernelflux.mobile:flux-router-core", version.ref = "fluxRouterCore" }
-flux-router-compiler-ksp = { module = "com.kernelflux.mobile:flux-router-compiler-ksp", version.ref = "fluxRouterCompilerKsp" }
+flux-router-core = { module = "com.kernelflux.mobile:flux-router-core", version.ref = "fluxRouter" }
+flux-router-compiler-ksp = { module = "com.kernelflux.mobile:flux-router-compiler-ksp", version.ref = "fluxRouter" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
@@ -48,6 +53,7 @@ androidx-cardview = { group = "androidx.cardview", name = "cardview", version.re
 # 网络
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobufJava" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 # 图片加载
@@ -55,6 +61,8 @@ glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "gl
 glide-ksp = { group = "com.github.bumptech.glide", name = "ksp", version.ref = "glide-ksp" }
 # JSON
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+# KV 存储
+mmkv = { group = "com.tencent", name = "mmkv", version.ref = "mmkv" }
 
 
 #aether sdk

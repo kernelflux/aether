@@ -2,7 +2,6 @@ package com.kernelflux.aether.network.api
 
 /**
  * ROM 兼容性处理器
- * 用于处理国内多厂商个性化 ROM 的兼容性问题
  */
 interface RomCompatibilityHandler {
     /**

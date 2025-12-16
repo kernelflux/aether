@@ -35,7 +35,31 @@ sealed class RequestBody {
             val filename: String? = null,
             val contentType: String? = null,
             val content: ByteArray? = null
-        )
+        ) {
+            override fun equals(other: Any?): Boolean {
+                if (this === other) return true
+                if (javaClass != other?.javaClass) return false
+
+                other as Part
+
+                if (name != other.name) return false
+                if (value != other.value) return false
+                if (filename != other.filename) return false
+                if (contentType != other.contentType) return false
+                if (!content.contentEquals(other.content)) return false
+
+                return true
+            }
+
+            override fun hashCode(): Int {
+                var result = name.hashCode()
+                result = 31 * result + (value?.hashCode() ?: 0)
+                result = 31 * result + (filename?.hashCode() ?: 0)
+                result = 31 * result + (contentType?.hashCode() ?: 0)
+                result = 31 * result + (content?.contentHashCode() ?: 0)
+                return result
+            }
+        }
     }
     
     /**
@@ -44,8 +68,26 @@ sealed class RequestBody {
     data class RawBody(
         val data: ByteArray,
         val contentType: String
-    ) : RequestBody()
-    
+    ) : RequestBody() {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as RawBody
+
+            if (!data.contentEquals(other.data)) return false
+            if (contentType != other.contentType) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = data.contentHashCode()
+            result = 31 * result + contentType.hashCode()
+            return result
+        }
+    }
+
     /**
      * 输入流请求体
      */
@@ -58,8 +100,21 @@ sealed class RequestBody {
     /**
      * Protobuf 请求体
      */
-    data class ProtobufBody(val data: ByteArray) : RequestBody()
-    
+    data class ProtobufBody(val data: ByteArray) : RequestBody() {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as ProtobufBody
+
+            return data.contentEquals(other.data)
+        }
+
+        override fun hashCode(): Int {
+            return data.contentHashCode()
+        }
+    }
+
     /**
      * 空请求体
      */

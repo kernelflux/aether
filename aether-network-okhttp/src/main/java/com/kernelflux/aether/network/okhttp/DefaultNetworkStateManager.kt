@@ -3,6 +3,7 @@ package com.kernelflux.aether.network.okhttp
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.LinkProperties
 import android.net.Network
@@ -36,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * - 兼容中低端设备和系统
  */
 class DefaultNetworkStateManager(
-    context: Context
+    private val context: Context
 ) : NetworkStateManager {
 
     private val connectivityManager: ConnectivityManager = try {
@@ -53,10 +54,33 @@ class DefaultNetworkStateManager(
     private val _networkStateFlow = MutableStateFlow<NetworkState>(getCurrentState())
     private val isMonitoring = AtomicBoolean(false)
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    
+    /**
+     * 检查是否有网络状态权限
+     * 注意：ACCESS_NETWORK_STATE 是普通权限，通常总是授予的
+     * 但为了健壮性，仍然检查
+     */
+    private fun hasNetworkStatePermission(): Boolean {
+        return try {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_NETWORK_STATE
+            ) == PackageManager.PERMISSION_GRANTED
+        } catch (e: Exception) {
+            // 异常处理，假设有权限
+            true
+        }
+    }
 
 
     @SuppressLint("ObsoleteSdkInt", "MissingPermission")
     override fun getCurrentState(): NetworkState {
+        // 检查权限
+        if (!hasNetworkStatePermission()) {
+            // 没有权限，返回默认状态（假设有网络，避免影响业务）
+            return NetworkState.AVAILABLE
+        }
+        
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 // API 23+ 使用新 API
@@ -80,8 +104,11 @@ class DefaultNetworkStateManager(
                     NetworkState.NONE
                 }
             }
+        } catch (e: SecurityException) {
+            // 权限异常，返回默认状态
+            NetworkState.AVAILABLE
         } catch (_: Exception) {
-            // 异常处理，返回默认状态，不抛异常
+            // 其他异常处理，返回默认状态，不抛异常
             NetworkState.AVAILABLE
         }
     }
@@ -113,6 +140,14 @@ class DefaultNetworkStateManager(
     override fun startMonitoring() {
         if (isMonitoring.getAndSet(true)) {
             return // 已经在监听
+        }
+
+        // 检查权限
+        if (!hasNetworkStatePermission()) {
+            // 没有权限，无法监听网络状态，使用默认状态
+            // 不抛异常，避免影响业务
+            isMonitoring.set(false)
+            return
         }
 
         try {
@@ -197,19 +232,26 @@ class DefaultNetworkStateManager(
                         } catch (_: Exception) {
                         }
                     }
-                }.also {
-                    val request = NetworkRequest.Builder()
-                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                        .build()
-                    connectivityManager.registerNetworkCallback(request, it)
                 }
+                
+                val request = NetworkRequest.Builder()
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    .build()
+                
+                connectivityManager.registerNetworkCallback(request, networkCallback!!)
             } else {
                 // API < 21，无法使用 NetworkCallback
                 // 使用轮询方式（不推荐，但作为降级方案）
                 isMonitoring.set(false)
             }
-        } catch (_: Exception) {
+        } catch (e: SecurityException) {
+            // 权限异常，停止监听
             isMonitoring.set(false)
+            networkCallback = null
+        } catch (e: Exception) {
+            // 其他异常，停止监听
+            isMonitoring.set(false)
+            networkCallback = null
         }
     }
 

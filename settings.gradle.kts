@@ -1,5 +1,7 @@
 pluginManagement {
+    // 包含插件构建（必须在 repositories 之前）
     includeBuild("appconfig")
+    
     repositories {
         google {
             content {
@@ -28,11 +30,13 @@ rootProject.name = "Aether"
 include(":aether-imageloader-api")
 include(":aether-network-api")
 include(":aether-log-api")
+include(":aether-kv-api")
 
 // 功能模块实现
 include(":aether-imageloader-glide")
 include(":aether-network-okhttp")
 include(":aether-log-android")
+include(":aether-kv-mmkv")
 
 // 业务模块 API（接口定义）
 include(":aether-payment-api")

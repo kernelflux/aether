@@ -6,6 +6,10 @@ import androidx.lifecycle.lifecycleScope
 import com.kernelflux.aether.log.api.ILogger
 import com.kernelflux.aether.network.api.*
 import com.kernelflux.aether.network.api.DefaultRetryStrategy
+import com.kernelflux.aether.network.impl.okhttp.converter.DataConverterFactory
+import com.kernelflux.aether.network.impl.okhttp.crypto.AesCrypto
+import com.kernelflux.aether.network.impl.okhttp.crypto.CryptoFactory
+import com.kernelflux.aether.network.impl.okhttp.crypto.RsaCrypto
 import com.kernelflux.fluxrouter.core.FluxRouter
 import kotlinx.coroutines.launch
 
@@ -36,6 +40,15 @@ class NetworkActivity : BaseActivity() {
         resultText = findViewById(R.id.result_text)
         networkStateText = findViewById(R.id.network_state_text)
 
+        // 检查网络客户端是否已初始化
+        if (networkClient == null) {
+            updateResult("❌ NetworkClient service not found. Please check if aether-network-okhttp module is included.")
+            logger?.e("NetworkActivity_tag", "NetworkClient service not found")
+            return
+        }
+        
+        android.util.Log.d("NetworkActivity", "NetworkClient instance: ${networkClient.hashCode()}")
+
         // 设置网络状态监听
         setupNetworkStateMonitoring()
 
@@ -44,6 +57,9 @@ class NetworkActivity : BaseActivity() {
 
         // 高级功能测试
         setupAdvancedFeatureTests()
+        
+        // 数据格式和加密测试
+        setupDataFormatAndCryptoTests()
     }
 
     /**
@@ -56,7 +72,7 @@ class NetworkActivity : BaseActivity() {
                 client.getNetworkStateFlow().collect { state ->
                     runOnUiThread {
                         networkStateText.text = "Network State: $state"
-                        logger?.d("NetworkActivity", "Network state changed: $state")
+                        logger?.d("NetworkActivity_tag", "Network state changed: $state")
                     }
                 }
             }
@@ -64,7 +80,7 @@ class NetworkActivity : BaseActivity() {
             // 添加网络状态监听器
             client.addNetworkStateListener(object : NetworkStateListener {
                 override fun onNetworkStateChanged(oldState: NetworkState, newState: NetworkState) {
-                    logger?.d("NetworkActivity", "Network state: $oldState -> $newState")
+                    logger?.d("NetworkActivity_tag", "Network state: $oldState -> $newState")
                 }
             })
         }
@@ -137,6 +153,36 @@ class NetworkActivity : BaseActivity() {
         // 12. DSL 构建器
         findViewById<Button>(R.id.btn_dsl).setOnClickListener {
             testDslBuilder()
+        }
+    }
+
+    /**
+     * 设置数据格式和加密测试
+     */
+    private fun setupDataFormatAndCryptoTests() {
+        // 13. JSON 转换器
+        findViewById<Button>(R.id.btn_json_converter).setOnClickListener {
+            testJsonConverter()
+        }
+
+        // 14. Protobuf 转换器
+        findViewById<Button>(R.id.btn_protobuf_converter).setOnClickListener {
+            testProtobufConverter()
+        }
+
+        // 15. 格式切换
+        findViewById<Button>(R.id.btn_format_switch).setOnClickListener {
+            testFormatSwitch()
+        }
+
+        // 16. AES 加密
+        findViewById<Button>(R.id.btn_aes_encryption).setOnClickListener {
+            testAesEncryption()
+        }
+
+        // 17. RSA 加密
+        findViewById<Button>(R.id.btn_rsa_encryption).setOnClickListener {
+            testRsaEncryption()
         }
     }
 
@@ -381,7 +427,7 @@ class NetworkActivity : BaseActivity() {
                     }
                     updateResult(result)
                 }
-                logger?.d("NetworkActivity", "$testName success: ${response.data}")
+                logger?.d("NetworkActivity_tag", "$testName success: ${response.data}")
             }
 
             override fun onError(exception: NetworkException) {
@@ -413,8 +459,160 @@ class NetworkActivity : BaseActivity() {
                     }
                     updateResult(result)
                 }
-                logger?.e("NetworkActivity", "$testName error", exception)
+                logger?.e("NetworkActivity_tag", "$testName error", exception)
             }
+        }
+    }
+
+    /**
+     * 测试用例 13: JSON 转换器
+     */
+    private fun testJsonConverter() {
+        updateResult("Testing JSON converter...")
+        val jsonConverter = DataConverterFactory.createJson()
+        val testData = mapOf(
+            "name" to "Test User",
+            "age" to 25,
+            "active" to true,
+            "tags" to listOf("android", "kotlin", "network")
+        )
+        
+        networkClient?.post<String>(
+            url = "https://httpbin.org/post",
+            callback = createCallback("JSON Converter Test")
+        ) {
+            jsonBody(testData)
+            dataConverter(jsonConverter)
+        }
+    }
+
+    /**
+     * 测试用例 14: Protobuf 转换器
+     */
+    private fun testProtobufConverter() {
+        updateResult("Testing Protobuf converter...")
+        val protobufConverter = DataConverterFactory.createProtobuf()
+        
+        // 注意：这里使用模拟的 Protobuf 数据（字节数组）
+        // 实际使用时，应该使用真实的 Protobuf Message 对象
+        val protobufData = "Hello Protobuf!".toByteArray()
+        
+        networkClient?.post<String>(
+            url = "https://httpbin.org/post",
+            callback = createCallback("Protobuf Converter Test")
+        ) {
+            protobufBody(protobufData)
+            dataConverter(protobufConverter)
+        }
+    }
+
+    /**
+     * 测试用例 15: 格式切换（JSON ↔ Protobuf）
+     */
+    private fun testFormatSwitch() {
+        updateResult("Testing format switch...")
+        
+        val testData = mapOf(
+            "message" to "Format Switch Test",
+            "timestamp" to System.currentTimeMillis(),
+            "format" to "JSON"
+        )
+        
+        // 先使用 JSON 格式
+        updateResult("Step 1: Sending with JSON converter...")
+        val jsonConverter = DataConverterFactory.createJson()
+        networkClient?.post<String>(
+            url = "https://httpbin.org/post",
+            callback = object : NetworkCallback<String> {
+                override fun onSuccess(response: Response<String>) {
+                    runOnUiThread {
+                        updateResult("✅ JSON format success!\n\nStep 2: Sending with Protobuf converter...")
+                        // 然后使用 Protobuf 格式
+                        val protobufConverter = DataConverterFactory.createProtobuf()
+                        val protobufData = "Protobuf Format Test".toByteArray()
+                        networkClient?.post<String>(
+                            url = "https://httpbin.org/post",
+                            callback = createCallback("Format Switch (Protobuf)")
+                        ) {
+                            protobufBody(protobufData)
+                            dataConverter(protobufConverter)
+                        }
+                    }
+                }
+
+                override fun onError(exception: NetworkException) {
+                    runOnUiThread {
+                        updateResult("❌ JSON format failed: ${exception.message}")
+                    }
+                }
+            }
+        ) {
+            jsonBody(testData)
+            dataConverter(jsonConverter)
+        }
+    }
+
+    /**
+     * 测试用例 16: AES 加密
+     */
+    private fun testAesEncryption() {
+        updateResult("Testing AES encryption...")
+        
+        try {
+            // 生成 AES 密钥（实际使用时应该安全存储）
+            val aesKey = AesCrypto.generateKey(256)
+            val aesCrypto = AesCrypto(aesKey)
+            
+            val sensitiveData = mapOf(
+                "username" to "testuser",
+                "password" to "secret123",
+                "creditCard" to "1234-5678-9012-3456"
+            )
+            
+            updateResult("Encrypting sensitive data with AES-256...")
+            networkClient?.post<String>(
+                url = "https://httpbin.org/post",
+                callback = createCallback("AES Encryption Test")
+            ) {
+                jsonBody(sensitiveData)
+                encryptor(aesCrypto)
+                decryptor(aesCrypto)
+            }
+        } catch (e: Exception) {
+            updateResult("❌ AES encryption test failed: ${e.message}")
+            logger?.e("NetworkActivity_tag", "AES encryption test error", e)
+        }
+    }
+
+    /**
+     * 测试用例 17: RSA 加密
+     */
+    private fun testRsaEncryption() {
+        updateResult("Testing RSA encryption...")
+        
+        try {
+            // 生成 RSA 密钥对（实际使用时应该安全存储）
+            val keyPair = RsaCrypto.generateKeyPair(2048)
+            val rsaCrypto = RsaCrypto(keyPair.public, keyPair.private)
+            
+            val sensitiveData = mapOf(
+                "apiKey" to "sk-1234567890abcdef",
+                "secretToken" to "token-secret-value",
+                "userId" to "user-12345"
+            )
+            
+            updateResult("Encrypting sensitive data with RSA-2048...")
+            networkClient?.post<String>(
+                url = "https://httpbin.org/post",
+                callback = createCallback("RSA Encryption Test")
+            ) {
+                jsonBody(sensitiveData)
+                encryptor(rsaCrypto)
+                decryptor(rsaCrypto)
+            }
+        } catch (e: Exception) {
+            updateResult("❌ RSA encryption test failed: ${e.message}")
+            logger?.e("NetworkActivity_tag", "RSA encryption test error", e)
         }
     }
 

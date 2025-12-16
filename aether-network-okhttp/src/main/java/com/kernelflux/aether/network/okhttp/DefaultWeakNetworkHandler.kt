@@ -1,4 +1,6 @@
-package com.kernelflux.aether.network.api
+package com.kernelflux.aether.network.okhttp
+
+import com.kernelflux.aether.network.api.*
 
 /**
  * 默认弱网处理器实现
