@@ -1,81 +1,79 @@
 # Aether Framework
 
-A powerful Android modular development framework based on SPI mechanism.
+基于 SPI 机制的强大 Android 模块化开发框架。
 
-**[中文版](README.zh-CN.md) | [English](README.md)**
+## 📁 模块结构
 
-## 📁 Module Structure
+### 基础模块组（Base Group）
+- `base/aether-utils` - 纯工具类（无Android依赖）
+- `base/aether-ui` - UI基础组件
+- `base/aether-common` - 通用工具（Android相关）
 
-### Base Group
-- `base/aether-utils` - Pure utility classes (no Android dependency)
-- `base/aether-ui` - UI base components
-- `base/aether-common` - Common utilities (Android related)
+### 核心模块组（Core Group）
+- `core/aether-imageloader-api` - 图片加载接口
+- `core/aether-imageloader-glide` - Glide图片加载实现
+- `core/aether-network-api` - 网络请求接口
+- `core/aether-network-okhttp` - OkHttp网络实现
+- `core/aether-log-api` - 日志接口
+- `core/aether-log-xlog` - XLog高性能日志实现（基于Mars xlog）
+- `core/aether-log-android` - Android日志实现（轻量级）
+- `core/aether-kv-api` - 键值存储接口
+- `core/aether-kv-mmkv` - MMKV存储实现
 
-### Core Group
-- `core/aether-imageloader-api` - Image loading interface
-- `core/aether-imageloader-glide` - Glide image loading implementation
-- `core/aether-network-api` - Network request interface
-- `core/aether-network-okhttp` - OkHttp network implementation
-- `core/aether-log-api` - Logging interface
-- `core/aether-log-xlog` - XLog high-performance logging implementation (based on Mars xlog)
-- `core/aether-log-android` - Android logging implementation (lightweight)
-- `core/aether-kv-api` - Key-value storage interface
-- `core/aether-kv-mmkv` - MMKV storage implementation
+### 功能模块组（Feature Group）
+- `feature/aether-payment-api` - 支付服务接口
+- `feature/aether-payment-alipay` - 支付宝支付实现
+- `feature/aether-payment-wechat` - 微信支付实现
+- `feature/aether-payment-google` - 谷歌支付实现
+- `feature/aether-share-api` - 分享服务接口
+- `feature/aether-share-wechat` - 微信分享实现
+- `feature/aether-login-api` - 登录服务接口
+- `feature/aether-login-oauth` - OAuth登录实现
 
-### Feature Group
-- `feature/aether-payment-api` - Payment service interface
-- `feature/aether-payment-alipay` - Alipay payment implementation
-- `feature/aether-payment-wechat` - WeChat payment implementation
-- `feature/aether-payment-google` - Google payment implementation
-- `feature/aether-share-api` - Share service interface
-- `feature/aether-share-wechat` - WeChat share implementation
-- `feature/aether-login-api` - Login service interface
-- `feature/aether-login-oauth` - OAuth login implementation
+## 🏗️ 架构设计
 
-## 🏗️ Architecture Design
-
-### Module Grouping
+### 模块分组
 ```
 aether/
-├── base/          # Base Group (utility classes and UI components)
-├── core/          # Core Group (infrastructure services)
-├── feature/       # Feature Group (business feature services)
-└── sample/        # Sample application
+├── base/          # 基础模块组（工具类和UI组件）
+├── core/          # 核心模块组（基础设施服务）
+├── feature/       # 功能模块组（业务功能服务）
+└── sample/        # 示例应用
 ```
 
-### Dependency Relationship
+### 依赖关系
 ```
-Feature Group (Business Modules)
+业务模块（Feature Group）
   ↓
-Core Group (Infrastructure Services)
+核心模块（Core Group）
   ↓
-Base Group (Base Utilities)
+基础模块（Base Group）
 ```
 
-## 🚀 Quick Start
+## 🚀 快速开始
 
-### Add Dependencies
+### 添加依赖
 
 ```kotlin
 dependencies {
-    // Base modules
+    // 基础模块
     implementation(project(":base:aether-utils"))
     implementation(project(":base:aether-ui"))
     implementation(project(":base:aether-common"))
     
-    // Core modules
+    // 核心模块
     implementation(project(":core:aether-network-api"))
     implementation(project(":core:aether-network-okhttp"))
     
-    // Feature modules
+    // 功能模块
     implementation(project(":feature:aether-payment-api"))
     implementation(project(":feature:aether-payment-alipay"))
 }
 ```
 
-## 📚 Usage Examples
+## 📚 使用示例
 
-### Using Utility Classes
+### 使用工具类
 ```kotlin
 import com.kernelflux.aether.utils.StringUtils
 import com.kernelflux.aether.utils.DateUtils
@@ -84,7 +82,7 @@ val isEmpty = StringUtils.isEmpty(str)
 val now = DateUtils.formatNow()
 ```
 
-### Using UI Base Components
+### 使用UI基础组件
 ```kotlin
 import com.kernelflux.aether.ui.BaseActivity
 import com.kernelflux.aether.ui.BaseFragment
@@ -96,7 +94,7 @@ class MyActivity : BaseActivity() {
 }
 ```
 
-### Using Logging Service
+### 使用日志服务
 ```kotlin
 import com.kernelflux.aether.log.api.ILogger
 import com.kernelflux.aether.log.api.LoggerConfig
@@ -105,7 +103,7 @@ import com.kernelflux.aether.log.api.FileConfig
 import com.kernelflux.fluxrouter.core.FluxRouter
 import java.io.File
 
-// Initialize in Application.onCreate()
+// 在 Application.onCreate() 中初始化
 val logger = FluxRouter.getService(ILogger::class.java)
 logger?.init(
     context = this,
@@ -118,7 +116,7 @@ logger?.init(
             cacheDir = File(cacheDir, "log_cache").absolutePath,
             namePrefix = "aether",
             maxFileSize = 10 * 1024 * 1024, // 10MB
-            maxAliveTime = 7 * 24 * 60 * 60 * 1000L, // 7 days
+            maxAliveTime = 7 * 24 * 60 * 60 * 1000L, // 7天
             cacheDays = 3,
             compressEnabled = true,
             customHeaderInfo = mapOf(
@@ -129,13 +127,13 @@ logger?.init(
     )
 )
 
-// Use logging
+// 使用日志
 logger?.d("Tag", "Debug message")
 logger?.i("Tag", "Info message")
 logger?.e("Tag", "Error message", exception)
 ```
 
-### Using Payment Service
+### 使用支付服务
 ```kotlin
 import com.kernelflux.aether.payment.api.IPaymentService
 import com.kernelflux.fluxrouter.core.FluxRouter
@@ -144,11 +142,11 @@ val paymentService = FluxRouter.getService(IPaymentService::class.java)
 paymentService?.pay(activity, order, callback)
 ```
 
-## 🌍 Internationalization Support
+## 🌍 国际化支持
 
-Aether framework uses **Android standard Resources system** for multi-language support.
+Aether框架使用**Android标准的Resources系统**处理多语言。
 
-### Usage
+### 使用方式
 
 ```kotlin
 import com.kernelflux.aether.common.ResourceHelper
@@ -161,10 +159,11 @@ val message = ResourceHelper.getString(
 )
 ```
 
-## 📖 Documentation
+## 📖 文档
 
-- [Module Grouping Guide](./MODULE_GROUPING_COMPLETE.md)
+- [模块分组说明](./MODULE_GROUPING_COMPLETE.md)
 
 ## 📄 License
 
 See [LICENSE](./LICENSE) file.
+
