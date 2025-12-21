@@ -1,251 +1,130 @@
-# Aether - Android Agile Development Framework
+# Aether Framework
 
-Aether is an Android modular development framework based on the SPI (Service Provider Interface) mechanism. It uses KSP annotation technology to achieve automatic module discovery and registration, allowing developers to easily combine functional modules and business modules to build applications.
+A powerful Android modular development framework based on SPI mechanism.
 
-## Architecture Design
+## 📁 模块结构
 
-### Core Concepts
+### 基础模块组（Base Group）
+- `base/aether-utils` - 纯工具类（无Android依赖）
+- `base/aether-ui` - UI基础组件
+- `base/aether-common` - 通用工具（Android相关）
 
-- **SPI Mechanism**: Decouples modules by separating interfaces from implementations
-- **Auto Discovery**: Uses KSP annotation processor to automatically discover and register service providers
-- **Modularity**: Functional modules and business modules are independent and can be plugged in or replaced
-- **Usability**: Unified API interface, simple and easy to use
+### 核心模块组（Core Group）
+- `core/aether-imageloader-api` - 图片加载接口
+- `core/aether-imageloader-glide` - Glide图片加载实现
+- `core/aether-network-api` - 网络请求接口
+- `core/aether-network-okhttp` - OkHttp网络实现
+- `core/aether-log-api` - 日志接口
+- `core/aether-log-android` - Android日志实现
+- `core/aether-kv-api` - 键值存储接口
+- `core/aether-kv-mmkv` - MMKV存储实现
 
-### Module Structure
+### 功能模块组（Feature Group）
+- `feature/aether-payment-api` - 支付服务接口
+- `feature/aether-payment-alipay` - 支付宝支付实现
+- `feature/aether-payment-wechat` - 微信支付实现
+- `feature/aether-payment-google` - 谷歌支付实现
+- `feature/aether-share-api` - 分享服务接口
+- `feature/aether-share-wechat` - 微信分享实现
+- `feature/aether-login-api` - 登录服务接口
+- `feature/aether-login-oauth` - OAuth登录实现
 
+## 🏗️ 架构设计
+
+### 模块分组
 ```
-Aether/
-├── Functional Modules/
-│   ├── aether-imageloader-api/     # Image loader API interface
-│   ├── aether-imageloader-glide/   # Glide implementation
-│   ├── aether-network-api/         # Network request API interface
-│   ├── aether-network-okhttp/      # OkHttp implementation
-│   ├── aether-log-api/             # Logging API interface
-│   └── aether-log-android/         # Android Log implementation
-├── Business Modules/
-│   ├── aether-payment-api/         # Payment API interface
-│   ├── aether-payment-alipay/      # Alipay implementation
-│   ├── aether-share-api/           # Share API interface
-│   ├── aether-share-wechat/        # WeChat share implementation
-│   ├── aether-login-api/           # Login API interface
-│   └── aether-login-oauth/         # OAuth login implementation
-└── sample/                         # Sample application
-```
-
-## Quick Start
-
-### 1. Initialize Framework
-
-Initialize Aether in your Application:
-
-```kotlin
-class MyApp : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        
-        // Automatically register all services annotated with @ServiceProvider
-        ServiceProviderInitializer.initialize(this)
-        
-        // Initialize Aether framework
-        Aether.init(this)
-    }
-}
+aether/
+├── base/          # 基础模块组（工具类和UI组件）
+├── core/          # 核心模块组（基础设施服务）
+├── feature/       # 功能模块组（业务功能服务）
+└── sample/        # 示例应用
 ```
 
-### 2. Using Functional Modules
-
-#### Image Loading
-
-```kotlin
-// Get image loader service
-val imageLoader = FluxRouter.getService<IImageLoader>()
-
-// Simple load
-imageLoader?.load("https://example.com/image.jpg")?.into(imageView)
-
-// With configuration
-imageLoader?.load("https://example.com/image.jpg")
-    ?.placeholder(R.drawable.placeholder)
-    ?.error(R.drawable.error)
-    ?.circle()
-    ?.into(imageView)
-
-// Lifecycle-aware (Activity/Fragment/View)
-imageLoader?.with(activity)
-    ?.load("https://example.com/image.jpg")
-    ?.radius(8f)
-    ?.into(imageView)
+### 依赖关系
+```
+业务模块（Feature Group）
+  ↓
+核心模块（Core Group）
+  ↓
+基础模块（Base Group）
 ```
 
-#### Network Request
+## 🚀 快速开始
 
-```kotlin
-// Get network client
-val networkClient = Aether.getService<INetworkClient>()
-
-// Initialize network configuration
-networkClient?.init(NetworkConfig(
-    baseUrl = "https://api.example.com/",
-    connectTimeout = 30_000
-))
-
-// Make GET request
-networkClient?.get(
-    url = "/api/user",
-    params = mapOf("id" to "123"),
-    responseType = UserResponse::class.java,
-    callback = object : NetworkCallback<UserResponse> {
-        override fun onSuccess(data: UserResponse) {
-            // Handle success
-        }
-        override fun onError(error: Throwable) {
-            // Handle error
-        }
-    }
-)
-```
-
-#### Logging
-
-```kotlin
-// Get logging service
-val logger = Aether.getService<ILogger>()
-
-// Set log level
-logger?.setLogLevel(LogLevel.DEBUG)
-
-// Use logger
-logger?.d("TAG", "Debug message")
-logger?.e("TAG", "Error message", exception)
-```
-
-### 3. Using Business Modules
-
-#### Login
-
-```kotlin
-val loginService = Aether.getService<ILoginService>()
-
-loginService?.login(
-    activity = this,
-    callback = object : LoginCallback {
-        override fun onSuccess(userInfo: UserInfo) {
-            // Login successful
-        }
-        override fun onError(error: Throwable) {
-            // Login failed
-        }
-        override fun onCancel() {
-            // User cancelled
-        }
-    }
-)
-```
-
-#### Payment
-
-```kotlin
-val paymentService = Aether.getService<IPaymentService>()
-
-paymentService?.pay(
-    activity = this,
-    order = PaymentOrder(
-        orderId = "order_123",
-        amount = 99.99,
-        subject = "Product Name"
-    ),
-    callback = object : PaymentCallback {
-        override fun onSuccess(orderId: String, amount: Double) {
-            // Payment successful
-        }
-        override fun onError(error: Throwable) {
-            // Payment failed
-        }
-        override fun onCancel() {
-            // User cancelled
-        }
-    }
-)
-```
-
-#### Share
-
-```kotlin
-val shareService = Aether.getService<IShareService>()
-
-shareService?.share(
-    activity = this,
-    content = ShareContent(
-        type = ShareType.LINK,
-        title = "Share Title",
-        content = "Share Content",
-        linkUrl = "https://example.com"
-    )
-)
-```
-
-## Extension Development
-
-### Creating Custom Service Providers
-
-1. **Implement SPI Interface**
-
-```kotlin
-@ServiceProvider(priority = 100)
-class MyImageLoader : IImageLoader {
-    override fun getProviderId(): String = "my_loader"
-    
-    override fun initialize(context: Context) {
-        // Initialization logic
-    }
-    
-    // Implement interface methods...
-}
-```
-
-2. **Add Dependencies**
-
-In your module's `build.gradle.kts`:
+### 添加依赖
 
 ```kotlin
 dependencies {
-    implementation(project(":aether-core"))
-    implementation(project(":aether-imageloader-api"))
-    ksp(project(":aether-core"))
+    // 基础模块
+    implementation(project(":base:aether-utils"))
+    implementation(project(":base:aether-ui"))
+    implementation(project(":base:aether-common"))
+    
+    // 核心模块
+    implementation(project(":core:aether-network-api"))
+    implementation(project(":core:aether-network-okhttp"))
+    
+    // 功能模块
+    implementation(project(":feature:aether-payment-api"))
+    implementation(project(":feature:aether-payment-alipay"))
 }
 ```
 
-3. **Usage**
+## 📚 使用示例
 
-Automatically registered in Application, use directly:
-
+### 使用工具类
 ```kotlin
-val imageLoader = Aether.getService<IImageLoader>()
+import com.kernelflux.aether.utils.StringUtils
+import com.kernelflux.aether.utils.DateUtils
+
+val isEmpty = StringUtils.isEmpty(str)
+val now = DateUtils.formatNow()
 ```
 
-## Design Advantages
+### 使用UI基础组件
+```kotlin
+import com.kernelflux.aether.ui.BaseActivity
+import com.kernelflux.aether.ui.BaseFragment
 
-1. **Decoupling**: Interface and implementation separation, easy to replace
-2. **Extensible**: Easily add new functional modules and business modules
-3. **Auto Discovery**: Uses KSP for automatic registration, no manual configuration needed
-4. **Priority**: Supports multiple implementations, selected by priority
-5. **Unified API**: All services obtained through unified Aether API
+class MyActivity : BaseActivity() {
+    override fun initView() {
+        setContentView(R.layout.activity_main)
+    }
+}
+```
 
-## Technology Stack
+### 使用支付服务
+```kotlin
+import com.kernelflux.aether.payment.api.IPaymentService
+import com.kernelflux.fluxrouter.FluxRouter
 
-- **Kotlin**: Primary development language
-- **KSP**: Annotation processing and code generation
-- **Gradle**: Build tool
-- **SPI Pattern**: Service Provider Interface pattern
+val paymentService = FluxRouter.getService(IPaymentService::class.java)
+paymentService?.pay(activity, order, callback)
+```
 
-## References
+## 🌍 国际化支持
 
-- Referenced design concepts from mainstream solutions like ARouter, WMRouter, etc.
-- Uses SPI mechanism to achieve module decoupling
-- Uses KSP instead of APT to improve compilation performance
+Aether框架使用**Android标准的Resources系统**处理多语言。
 
-## License
+### 使用方式
 
-Copyright © 2025 kernelflux
+```kotlin
+import com.kernelflux.aether.common.ResourceHelper
+import com.kernelflux.aether.payment.api.PaymentResourceKeys
 
-Licensed under the MIT License.
+val message = ResourceHelper.getString(
+    context,
+    PaymentResourceKeys.PAYMENT_SUCCESS,
+    "Payment successful"
+)
+```
+
+## 📖 文档
+
+- [模块分组说明](./MODULE_GROUPING_COMPLETE.md)
+- [基础模块说明](./base/aether-utils/README.md)
+- [UI组件说明](./base/aether-ui/README.md)
+
+## 📄 License
+
+See [LICENSE](./LICENSE) file.

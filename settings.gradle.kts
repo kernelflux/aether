@@ -26,27 +26,43 @@ dependencyResolutionManagement {
 
 rootProject.name = "Aether"
 
-// 功能模块 API（接口定义）
-include(":aether-imageloader-api")
-include(":aether-network-api")
-include(":aether-log-api")
-include(":aether-kv-api")
+// ==================== 基础模块组（Base Group）====================
+include(":base:aether-utils")        // 纯工具类（无Android依赖）
+include(":base:aether-ui")            // UI基础组件
+include(":base:aether-common")        // 通用工具（Android相关）
 
-// 功能模块实现
-include(":aether-imageloader-glide")
-include(":aether-network-okhttp")
-include(":aether-log-android")
-include(":aether-kv-mmkv")
+// ==================== 核心模块组（Core Group）====================
+// 图片加载
+include(":core:aether-imageloader-api")
+include(":core:aether-imageloader-glide")
 
-// 业务模块 API（接口定义）
-include(":aether-payment-api")
-include(":aether-share-api")
-include(":aether-login-api")
+// 网络
+include(":core:aether-network-api")
+include(":core:aether-network-okhttp")
 
-// 业务模块实现
-include(":aether-payment-alipay")
-include(":aether-share-wechat")
-include(":aether-login-oauth")
+// 日志
+include(":core:aether-log-api")
+include(":core:aether-log-xlog")
+include(":core:aether-log-android")
 
-// 示例应用
+// 键值存储
+include(":core:aether-kv-api")
+include(":core:aether-kv-mmkv")
+
+// ==================== 功能模块组（Feature Group）====================
+// 支付
+include(":feature:aether-payment-api")
+include(":feature:aether-payment-alipay")
+include(":feature:aether-payment-wechat")
+include(":feature:aether-payment-google")
+
+// 分享
+include(":feature:aether-share-api")
+include(":feature:aether-share-wechat")
+
+// 登录
+include(":feature:aether-login-api")
+include(":feature:aether-login-oauth")
+
+// ==================== 示例应用 ====================
 include(":sample")

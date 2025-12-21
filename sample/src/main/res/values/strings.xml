@@ -1,3 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Aether</string>
+    <!-- Sample应用字符串资源 - 英文 -->
+    <!-- 注意：现在使用Android标准的Resources系统 -->
+    
+    <string name="app_name">Aether Sample</string>
+    
+    <!-- 支付页面 -->
+    <string name="payment_demo">Payment Demo</string>
+    <string name="payment_select_method">Select payment method:</string>
+    <string name="payment_alipay">Alipay</string>
+    <string name="payment_wechat">WeChat Pay</string>
+    <string name="payment_google">Google Pay</string>
+    <string name="payment_initial_hint">Please select a payment method and click the pay button</string>
+    <string name="payment_pay_with">Pay ¥99.99 with %1$s</string>
+    <string name="payment_not_available">%1$s is not available</string>
+    <string name="payment_service_not_found">Error: Payment service not found for %1$s</string>
+    <string name="payment_service_unavailable">Error: %1$s is not available</string>
+    <string name="payment_processing">Processing payment...</string>
+    <string name="payment_success">Payment successful!\nOrder ID: %1$s\n%2$sAmount: ¥99.99</string>
+    <string name="payment_transaction_id">Transaction ID: %1$s\n</string>
+    <string name="payment_failed">Payment failed\nError code: %1$d\nError message: %2$s</string>
+    <string name="payment_cancelled">Payment cancelled</string>
+    <string name="payment_test_product">Test Product</string>
+    <string name="payment_test_order">This is a test payment order</string>
 </resources>

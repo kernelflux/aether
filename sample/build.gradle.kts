@@ -59,30 +59,37 @@ dependencies {
     implementation(libs.androidx.cardview)
 
     // 功能模块 API
-    debugImplementation(project(":aether-imageloader-api"))
+    debugImplementation(project(":core:aether-imageloader-api"))
     releaseImplementation(libs.aether.imageloader.api)
 
 
-    implementation(project(":aether-network-api"))
-    implementation(project(":aether-log-api"))
+    implementation(project(":core:aether-network-api"))
+    implementation(project(":core:aether-log-api"))
+    implementation(project(":core:aether-kv-api"))
 
     // 功能模块实现
-    debugImplementation(project(":aether-imageloader-glide"))
+    debugImplementation(project(":core:aether-imageloader-glide"))
     releaseImplementation(libs.aether.imageloader.glide)
 
 
-    implementation(project(":aether-network-okhttp"))
-    implementation(project(":aether-log-android"))
+    implementation(project(":core:aether-network-okhttp"))
+    implementation(project(":core:aether-log-xlog"))
+    implementation(project(":core:aether-kv-mmkv"))
 
     // 业务模块 API
-    implementation(project(":aether-payment-api"))
-    implementation(project(":aether-share-api"))
-    implementation(project(":aether-login-api"))
+    implementation(project(":feature:aether-payment-api"))
+    implementation(project(":feature:aether-share-api"))
+    implementation(project(":feature:aether-login-api"))
 
     // 业务模块实现
-    implementation(project(":aether-payment-alipay"))
-    implementation(project(":aether-share-wechat"))
-    implementation(project(":aether-login-oauth"))
+    implementation(project(":feature:aether-payment-alipay"))
+    implementation(project(":feature:aether-payment-wechat"))
+    implementation(project(":feature:aether-payment-google"))
+    implementation(project(":feature:aether-share-wechat"))
+    implementation(project(":feature:aether-login-oauth"))
+    
+    // Base modules (required by payment services)
+    implementation(project(":base:aether-common"))
 
 
 }

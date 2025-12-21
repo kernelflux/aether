@@ -35,15 +35,14 @@ class LoginActivity : BaseActivity() {
                 callback = object : com.kernelflux.aether.login.api.LoginCallback {
                     override fun onSuccess(userInfo: com.kernelflux.aether.login.api.UserInfo) {
                         runOnUiThread {
-                            statusText.text =
-                                "Login Success:\n${userInfo.nickname}\n${userInfo.userId}"
+                            statusText.text = "Login Success:\n${userInfo.nickname}\n${userInfo.userId}"
                             updateStatus(statusText)
                         }
                     }
 
                     override fun onError(error: Throwable) {
                         runOnUiThread {
-                            statusText.text = "Login Error: ${error.message}"
+                            statusText.text = "Login Error: ${error.message ?: ""}"
                         }
                     }
 

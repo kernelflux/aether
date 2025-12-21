@@ -1,41 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    tools:context=".PaymentActivity">
+    android:fillViewport="true">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="32dp"
-        android:text="Payment Demo"
-        android:textColor="#333333"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        tools:ignore="HardcodedText" />
-
-    <TextView
-        android:id="@+id/status_text"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
+        android:orientation="vertical"
         android:padding="16dp"
-        android:background="#F5F5F5"
-        android:text="Click button to test payment"
-        android:textColor="#333333"
-        android:textSize="14sp"
-        tools:ignore="HardcodedText" />
+        tools:context=".PaymentActivity">
 
-    <Button
-        android:id="@+id/btn_pay"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Pay $99.99"
-        tools:ignore="HardcodedText" />
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="32dp"
+            android:text="@string/payment_demo"
+            android:textColor="#333333"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
-</LinearLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/payment_select_method"
+            android:textColor="#666666"
+            android:textSize="16sp" />
+
+        <RadioGroup
+            android:id="@+id/payment_type_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:orientation="vertical">
+
+            <RadioButton
+                android:id="@+id/rb_alipay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:padding="12dp"
+                android:text="@string/payment_alipay"
+                android:textSize="16sp" />
+
+            <RadioButton
+                android:id="@+id/rb_wechat"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="12dp"
+                android:text="@string/payment_wechat"
+                android:textSize="16sp" />
+
+            <RadioButton
+                android:id="@+id/rb_google"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="12dp"
+                android:text="@string/payment_google"
+                android:textSize="16sp" />
+
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/status_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:minHeight="120dp"
+            android:padding="16dp"
+            android:background="#F5F5F5"
+            android:gravity="top"
+            android:text="@string/payment_initial_hint"
+            android:textColor="#333333"
+            android:textSize="14sp"
+            tools:ignore="HardcodedText" />
+
+        <Button
+            android:id="@+id/btn_pay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="使用支付宝支付 ¥99.99"
+            android:textSize="16sp"
+            tools:ignore="HardcodedText" />
+
+    </LinearLayout>
+
+</ScrollView>

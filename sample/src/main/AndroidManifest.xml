@@ -41,6 +41,11 @@
             android:parentActivityName=".MainActivity" />
 
         <activity
+            android:name=".KVActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
             android:name=".LoginActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity" />
@@ -52,6 +57,11 @@
 
         <activity
             android:name=".ShareActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".LogActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity" />
 

@@ -16,11 +16,41 @@ import androidx.recyclerview.widget.RecyclerView
 class MainActivity : BaseActivity() {
 
     private val services = listOf(
-        ServiceItem("Image Loader", "图片加载服务", ImageLoaderActivity::class.java),
-        ServiceItem("Network", "网络请求服务", NetworkActivity::class.java),
-        ServiceItem("Login", "登录服务", LoginActivity::class.java),
-        ServiceItem("Payment", "支付服务", PaymentActivity::class.java),
-        ServiceItem("Share", "分享服务", ShareActivity::class.java)
+        ServiceItem(
+            "Log Service",
+            "Logging Service Demo",
+            LogActivity::class.java
+        ),
+        ServiceItem(
+            "Image Loader",
+            "Image Loader Service",
+            ImageLoaderActivity::class.java
+        ),
+        ServiceItem(
+            "Network",
+            "Network Request Service",
+            NetworkActivity::class.java
+        ),
+        ServiceItem(
+            "KV Store",
+            "Key-Value Store Service",
+            KVActivity::class.java
+        ),
+        ServiceItem(
+            "Login",
+            "Login Service",
+            LoginActivity::class.java
+        ),
+        ServiceItem(
+            "Payment",
+            "Payment Service",
+            PaymentActivity::class.java
+        ),
+        ServiceItem(
+            "Share",
+            "Share Service",
+            ShareActivity::class.java
+        )
     )
 
     override fun getContentResId(): Int = R.layout.activity_main

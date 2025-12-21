@@ -86,6 +86,52 @@
 -dontwarn com.google.protobuf.Message
 -dontwarn com.google.protobuf.MessageLite
 
+# Keep ResourceHelper class (used by payment services)
+-keep class com.kernelflux.aether.common.ResourceHelper { *; }
+-dontwarn com.kernelflux.aether.common.ResourceHelper
+
+# Keep all Activity classes (required for AndroidManifest.xml)
+-keep class * extends android.app.Activity
+-keep class * extends androidx.fragment.app.FragmentActivity
+-keep class * extends androidx.appcompat.app.AppCompatActivity
+-keep class com.kernelflux.aethersample.**Activity { *; }
+-keep class com.kernelflux.aethersample.**Activity$* { *; }
+
+# Keep Application class
+-keep class com.kernelflux.aethersample.AetherApp { *; }
+
+# Keep BaseActivity and its subclasses
+-keep class com.kernelflux.aethersample.BaseActivity { *; }
+-keep class com.kernelflux.aethersample.BaseActivity$* { *; }
+
+# Keep Log Service API and implementations
+-keep interface com.kernelflux.aether.log.api.ILogger { *; }
+-keep class com.kernelflux.aether.log.api.LoggerConfig { *; }
+-keep class com.kernelflux.aether.log.api.FileConfig { *; }
+-keep class com.kernelflux.aether.log.api.LoggerHelper { *; }
+-keep enum com.kernelflux.aether.log.api.LogLevel { *; }
+-keep enum com.kernelflux.aether.log.api.AppenderMode { *; }
+
+# Keep XLogLogger implementation
+-keep @com.kernelflux.fluxrouter.annotation.FluxService class com.kernelflux.aether.log.xlog.XLogLogger {
+    <init>();
+    public <methods>;
+}
+-keep class com.kernelflux.aether.log.xlog.XLogLogger { *; }
+-keep class com.kernelflux.aether.log.xlog.XLogLogger$* { *; }
+-keep class com.kernelflux.aether.log.xlog.Xlog { *; }
+-keepclasseswithmembernames class com.kernelflux.aether.log.xlog.Xlog {
+    native <methods>;
+}
+
+# Keep AndroidLogLogger implementation (if used)
+-keep @com.kernelflux.fluxrouter.annotation.FluxService class com.kernelflux.aether.log.android.AndroidLogLogger {
+    <init>();
+    public <methods>;
+}
+-keep class com.kernelflux.aether.log.android.AndroidLogLogger { *; }
+-keep class com.kernelflux.aether.log.android.AndroidLogLogger$* { *; }
+
 # Keep attributes
 -keepattributes SourceFile,LineNumberTable
 -keepattributes Exceptions

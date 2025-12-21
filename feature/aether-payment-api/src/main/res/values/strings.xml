@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Aether Payment API 资源文件模板
+        
+        注意：这是框架层提供的资源文件模板，应用层应该：
+        1. 复制这些资源到自己的 res/values/strings.xml
+        2. 根据需要进行翻译（创建 values-zh-rCN/strings.xml 等）
+        3. 可以修改默认值以适应应用需求
+        
+        框架层使用这些资源名称，但不会提供默认值，应用层必须提供。
+    -->
+    
+    <!-- 支付方式名称 -->
+    <string name="payment_type_wechat">WeChat Pay</string>
+    <string name="payment_type_alipay">Alipay</string>
+    <string name="payment_type_google_pay">Google Pay</string>
+    
+    <!-- 支付状态 -->
+    <string name="payment_success">Payment successful</string>
+    <string name="payment_failed">Payment failed</string>
+    <string name="payment_cancelled">Payment cancelled</string>
+    <string name="payment_timeout">Payment timeout</string>
+    <string name="payment_processing">Payment processing</string>
+    
+    <!-- 错误消息 -->
+    <string name="payment_error_data_empty">Payment data is empty</string>
+    <string name="payment_error_environment_not_ready">Payment environment not ready</string>
+    <string name="payment_error_network">Network error, please check your connection</string>
+    <string name="payment_error_timeout">Payment timeout, please retry</string>
+    <string name="payment_error_failed">Payment failed</string>
+    <string name="payment_error_order_not_found">Order not found</string>
+    <string name="payment_error_product_not_found">Product not found</string>
+    <string name="payment_error_query_failed">Query failed</string>
+    <string name="payment_error_launch_failed">Failed to launch payment</string>
+    <string name="payment_error_verification_failed">Payment verification failed</string>
+    <string name="payment_error_system">System error</string>
+    <string name="payment_error_unknown">Unknown error</string>
+    
+    <!-- 环境检查 -->
+    <string name="payment_env_ready">Environment ready</string>
+    <string name="payment_env_not_ready">Environment not ready</string>
+    <string name="payment_env_wechat_not_installed">WeChat Pay is not available, please check if WeChat is installed</string>
+    <string name="payment_env_wechat_version_not_supported">Current WeChat version does not support payment, please update WeChat</string>
+    <string name="payment_env_google_play_not_connected">Google Play service is not connected, please try again later</string>
+    
+    <!-- 功能不支持 -->
+    <string name="payment_feature_not_supported_query">This payment method does not support order query</string>
+    <string name="payment_feature_not_supported_verify">This payment method does not support order verification</string>
+    
+    <!-- 订单验证 -->
+    <string name="payment_verification_success">Verification successful</string>
+    <string name="payment_verification_failed">Verification failed</string>
+    <string name="payment_verification_processing">Verification processing</string>
+</resources>
