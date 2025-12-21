@@ -15,7 +15,8 @@ A powerful Android modular development framework based on SPI mechanism.
 - `core/aether-network-api` - 网络请求接口
 - `core/aether-network-okhttp` - OkHttp网络实现
 - `core/aether-log-api` - 日志接口
-- `core/aether-log-android` - Android日志实现
+- `core/aether-log-xlog` - XLog高性能日志实现（基于Mars xlog）
+- `core/aether-log-android` - Android日志实现（轻量级）
 - `core/aether-kv-api` - 键值存储接口
 - `core/aether-kv-mmkv` - MMKV存储实现
 
@@ -93,10 +94,49 @@ class MyActivity : BaseActivity() {
 }
 ```
 
+### 使用日志服务
+```kotlin
+import com.kernelflux.aether.log.api.ILogger
+import com.kernelflux.aether.log.api.LoggerConfig
+import com.kernelflux.aether.log.api.LogLevel
+import com.kernelflux.aether.log.api.FileConfig
+import com.kernelflux.fluxrouter.core.FluxRouter
+import java.io.File
+
+// 在 Application.onCreate() 中初始化
+val logger = FluxRouter.getService(ILogger::class.java)
+logger?.init(
+    context = this,
+    defaultConfig = LoggerConfig(
+        level = LogLevel.DEBUG,
+        consoleEnabled = true,
+        fileEnabled = true,
+        fileConfig = FileConfig(
+            logDir = File(filesDir, "logs").absolutePath,
+            cacheDir = File(cacheDir, "log_cache").absolutePath,
+            namePrefix = "aether",
+            maxFileSize = 10 * 1024 * 1024, // 10MB
+            maxAliveTime = 7 * 24 * 60 * 60 * 1000L, // 7天
+            cacheDays = 3,
+            compressEnabled = true,
+            customHeaderInfo = mapOf(
+                "Device" to Build.MODEL,
+                "App Version" to "1.0.0"
+            )
+        )
+    )
+)
+
+// 使用日志
+logger?.d("Tag", "Debug message")
+logger?.i("Tag", "Info message")
+logger?.e("Tag", "Error message", exception)
+```
+
 ### 使用支付服务
 ```kotlin
 import com.kernelflux.aether.payment.api.IPaymentService
-import com.kernelflux.fluxrouter.FluxRouter
+import com.kernelflux.fluxrouter.core.FluxRouter
 
 val paymentService = FluxRouter.getService(IPaymentService::class.java)
 paymentService?.pay(activity, order, callback)
@@ -122,8 +162,6 @@ val message = ResourceHelper.getString(
 ## 📖 文档
 
 - [模块分组说明](./MODULE_GROUPING_COMPLETE.md)
-- [基础模块说明](./base/aether-utils/README.md)
-- [UI组件说明](./base/aether-ui/README.md)
 
 ## 📄 License
 
