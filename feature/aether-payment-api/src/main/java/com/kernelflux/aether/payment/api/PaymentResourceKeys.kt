@@ -7,7 +7,7 @@ package com.kernelflux.aether.payment.api
  * 
  * 使用方式：
  * ```kotlin
- * ResourceHelper.getString(context, PaymentResourceKeys.PAYMENT_SUCCESS, "Payment successful")
+ * com.kernelflux.aether.payment.api.ResourceHelper.getString(context, PaymentResourceKeys.PAYMENT_SUCCESS, "Payment successful")
  * ```
  * 
  * 注意：框架层不提供资源文件，应用层需要在自己的 res/values/ 目录中定义这些资源

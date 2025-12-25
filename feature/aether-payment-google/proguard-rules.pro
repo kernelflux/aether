@@ -9,5 +9,5 @@
 -dontwarn com.android.billingclient.**
 
 # Keep ResourceHelper class and its methods
--keep class com.kernelflux.aether.common.ResourceHelper { *; }
--dontwarn com.kernelflux.aether.common.ResourceHelper
+-keep class com.kernelflux.aether.payment.api.ResourceHelper { *; }
+-dontwarn com.kernelflux.aether.payment.api.ResourceHelper

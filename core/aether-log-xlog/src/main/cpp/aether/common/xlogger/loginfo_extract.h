@@ -10,13 +10,6 @@
 // either express or implied. See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
- * loginfo_extract.h
- *
- *  Created on: 2016年10月13日
- *      Author: yanguoyue
- */
-
 #ifndef XLOGGER_LOGINFO_EXTRACT_H_
 #define XLOGGER_LOGINFO_EXTRACT_H_
 

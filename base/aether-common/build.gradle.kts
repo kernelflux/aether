@@ -15,6 +15,12 @@ android {
 dependencies {
     // 依赖工具类模块
     api(project(":base:aether-utils"))
+
+    // Android基础依赖
+    api(libs.androidx.appcompat)
+    api(libs.androidx.fragment)
+    api(libs.androidx.activity)
+
 }
 
 apply(from = rootProject.file("gradle/maven-publish.gradle"))

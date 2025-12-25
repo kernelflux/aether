@@ -11,13 +11,6 @@
 // limitations under the License.
 
 
-/*
- * bootrun.h
- *
- *  Created on: 2014-7-9
- *      Author: yerungui
- */
-
 #ifndef COMM_BOOTRUN_H_
 #define COMM_BOOTRUN_H_
 

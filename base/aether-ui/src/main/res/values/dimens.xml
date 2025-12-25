@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <item name="base_dp_1.5" type="dimen">1.5dp</item>
+    <item name="base_dp_14" type="dimen">14dp</item>
+    <item name="base_dp_8" type="dimen">8dp</item>
+    <item name="base_dp_3" type="dimen">3dp</item>
+    <item name="base_dp_6" type="dimen">6dp</item>
+    <item name="base_dp_50" type="dimen">50dp</item>
+    <item name="base_dp_25" type="dimen">25dp</item>
+    <item name="base_dp_9" type="dimen">9dp</item>
+
+
+</resources>

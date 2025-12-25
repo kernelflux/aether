@@ -1,4 +1,4 @@
-package com.kernelflux.aether.common
+package com.kernelflux.aether.payment.api
 
 import android.content.Context
 
@@ -9,7 +9,7 @@ import android.content.Context
  * 
  * 使用方式：
  * ```kotlin
- * ResourceHelper.getString(context, "payment_success", "Payment successful")
+ * ResourceHelper.getString(context, PaymentResourceKeys.PAYMENT_SUCCESS, "Payment successful")
  * ```
  * 
  * 注意：应用层需要在 res/values/strings.xml 中定义对应的资源
@@ -67,3 +67,4 @@ object ResourceHelper {
         }
     }
 }
+

@@ -1,10 +1,3 @@
-/*
- * loginfo_extract.c
- *
- *  Created on: 2016年10月13日
- *      Author: yanguoyue
- */
-
 #include "loginfo_extract.h"
 
 #include <string.h>

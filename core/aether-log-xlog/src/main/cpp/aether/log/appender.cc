@@ -11,13 +11,6 @@
 // limitations under the License.
 
 
-/*
- * appender.h
- *
- *  Created on: 2013-3-7
- *      Author: yerungui
- */
-
 #ifdef _WIN32
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
@@ -903,14 +896,20 @@ void appender_open(TAppenderMode _mode, const char* _dir, const char* _nameprefi
     }
 
     // Output custom header info if provided
+    // Note: These header lines will appear as regular log entries in the log file
+    // Format: "=== Header: key: value ===" for better readability
     if (!sg_log_extra_msg.empty()) {
+        xlogger_appender(NULL, "=== Custom Header Info ===");
         std::istringstream iss(sg_log_extra_msg);
         std::string line;
         while (std::getline(iss, line)) {
             if (!line.empty()) {
-                xlogger_appender(NULL, line.c_str());
+                // Format: "=== Header: key: value ===" for better readability
+                std::string formatted_line = "=== Header: " + line + " ===";
+                xlogger_appender(NULL, formatted_line.c_str());
             }
         }
+        xlogger_appender(NULL, "=== End Header Info ===");
     }
 
     snprintf(logmsg, sizeof(logmsg), "log appender mode:%d, use mmap:%d", (int)_mode, use_mmap);
@@ -1058,6 +1057,10 @@ void appender_setExtraMSg(const char* _msg, unsigned int _len) {
     } else {
         sg_log_extra_msg = std::string(_msg, _len);
     }
+}
+
+const char* appender_getExtraMSg() {
+    return sg_log_extra_msg.c_str();
 }
 
 bool appender_getfilepath_from_timespan(int _timespan, const char* _prefix, std::vector<std::string>& _filepath_vec) {

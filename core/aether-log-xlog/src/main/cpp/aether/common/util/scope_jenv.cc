@@ -11,13 +11,6 @@
 // limitations under the License.
 
 
-/*
- * scop_jenv.cpp
- *
- *  Created on: 2012-8-21
- *      Author: yanguoyue
- */
-
 #include "util/scope_jenv.h"
 #include <cstddef>
 #include <unistd.h>

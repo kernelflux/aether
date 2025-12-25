@@ -11,13 +11,6 @@
 // limitations under the License.
 
 
-/*
- * scope_recursion_limit.h
- *
- *  Created on: Mar 12, 2014
- *      Author: yanguoyue
- */
-
 #ifndef COMM_SCOPERECURSIONLIMIT_H_
 #define COMM_SCOPERECURSIONLIMIT_H_
 

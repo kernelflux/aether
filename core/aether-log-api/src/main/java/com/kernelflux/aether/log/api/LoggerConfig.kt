@@ -34,7 +34,26 @@ data class LoggerConfig(
     /**
      * 文件输出配置（可选）
      */
-    val fileConfig: FileConfig? = null
+    val fileConfig: FileConfig? = null,
+    
+    /**
+     * 自定义 so 库加载器（可选）
+     * 用于支持应用层使用自定义的 so 加载器，如 ReLinker
+     * 
+     * 注意：此配置仅在 XLogLogger 实现中生效，AndroidLogLogger 不使用此配置
+     * 
+     * 示例：
+     * ```kotlin
+     * val config = LoggerConfig(
+     *     libraryLoader = object : LibraryLoader {
+     *         override fun loadLibrary(libName: String) {
+     *             ReLinker.loadLibrary(context, libName)
+     *         }
+     *     }
+     * )
+     * ```
+     */
+    val libraryLoader: LibraryLoader? = null
 )
 
 /**

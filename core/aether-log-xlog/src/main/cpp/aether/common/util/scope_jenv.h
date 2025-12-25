@@ -11,13 +11,6 @@
 // limitations under the License.
 
 
-/*
- * scop_jenv.h
- *
- *  Created on: 2012-8-21
- *      Author: yanguoyue
- */
-
 #ifndef SCOP_JENV_H_
 #define SCOP_JENV_H_
 

@@ -58,13 +58,13 @@ interface IPaymentService {
         return EnvironmentCheckResult(
             ready = isAvailable(),
             message = if (isAvailable()) {
-                com.kernelflux.aether.common.ResourceHelper.getString(
+                ResourceHelper.getString(
                     context,
                     PaymentResourceKeys.ENV_READY,
                     "Environment ready"
                 )
             } else {
-                com.kernelflux.aether.common.ResourceHelper.getString(
+                ResourceHelper.getString(
                     context,
                     PaymentResourceKeys.ENV_NOT_READY,
                     "Environment not ready"
@@ -113,7 +113,7 @@ interface IPaymentService {
         callback.onError(
             PaymentErrorInfo(
                 code = PaymentError.SYSTEM_ERROR,
-                message = com.kernelflux.aether.common.ResourceHelper.getString(
+                message = ResourceHelper.getString(
                     context,
                     PaymentResourceKeys.FEATURE_NOT_SUPPORTED_QUERY,
                     "This payment method does not support order query"
@@ -142,7 +142,7 @@ interface IPaymentService {
         callback.onError(
             PaymentErrorInfo(
                 code = PaymentError.SYSTEM_ERROR,
-                message = com.kernelflux.aether.common.ResourceHelper.getString(
+                message = ResourceHelper.getString(
                     context,
                     PaymentResourceKeys.FEATURE_NOT_SUPPORTED_VERIFY,
                     "This payment method does not support order verification"

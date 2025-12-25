@@ -11,13 +11,6 @@
 // limitations under the License.
 
 
-/*
- * utils.h
- *
- *  Created on: 2012-7-18
- *      Author: yerungui
- */
-
 #ifndef COMM_UTILS_H_
 #define COMM_UTILS_H_
 

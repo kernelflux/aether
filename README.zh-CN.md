@@ -149,7 +149,7 @@ Aether框架使用**Android标准的Resources系统**处理多语言。
 ### 使用方式
 
 ```kotlin
-import com.kernelflux.aether.common.ResourceHelper
+import com.kernelflux.aether.payment.api.ResourceHelper
 import com.kernelflux.aether.payment.api.PaymentResourceKeys
 
 val message = ResourceHelper.getString(

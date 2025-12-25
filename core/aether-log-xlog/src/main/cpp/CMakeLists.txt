@@ -32,6 +32,8 @@ set(AETHER_LOG_SRC
     "${AETHER_LOG_DIR}/appender.cc"
     "${AETHER_LOG_DIR}/formater.cc"
     "${AETHER_LOG_DIR}/log_buffer.cc"
+    "${AETHER_LOG_DIR}/xlogger_interface.cc"
+    "${AETHER_LOG_DIR}/xlogger_appender.cc"
 )
 
 # Log crypt source (required by log_buffer)
@@ -44,6 +46,7 @@ set(AETHER_LOG_CRYPT_SRC
 set(AETHER_COMMON_XLOGGER_SRC
     "${AETHER_COMMON_DIR}/xlogger/xloggerbase.c"
     "${AETHER_COMMON_DIR}/xlogger/loginfo_extract.c"
+    "${AETHER_COMMON_DIR}/xlogger/xlogger_category.cc"
 )
 
 # Common utility sources

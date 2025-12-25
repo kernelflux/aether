@@ -1,11 +1,3 @@
-/*
- * comm_assert.c
- *
- *  Created on: 2012-9-5
- *      Author: yerungui
- */
-
-
 #include <assert.h>
 #include <signal.h>
 #include <stdio.h>

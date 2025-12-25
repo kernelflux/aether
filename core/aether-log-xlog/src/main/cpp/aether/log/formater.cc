@@ -11,17 +11,10 @@
 // limitations under the License.
 
 
-/*
- * log_formater.cpp
- *
- *  Created on: 2013-3-8
- *      Author: yerungui
- */
-
-
 #include <cassert>
 #include <cstdio>
 #include <climits>
+#include <cstring>
 #include <algorithm>
 
 #include "xloggerbase.h"
@@ -73,32 +66,56 @@ void log_formater(const XLoggerInfo* _info, const char* _logbody, PtrBuffer& _lo
         char strFuncName [128] = {0};
         ExtractFunctionName(_info->func_name, strFuncName, sizeof(strFuncName));
 
-        char temp_time[64] = {0};
-
+        // 优化时间格式：使用标准格式 YYYY-MM-DD HH:mm:ss.SSS（去掉时区偏移）
+        char temp_time[32] = {0};
         if (0 != _info->timeval.tv_sec) {
             time_t sec = _info->timeval.tv_sec;
             tm tm = *localtime((const time_t*)&sec);
-#ifdef ANDROID
-            snprintf(temp_time, sizeof(temp_time), "%d-%02d-%02d %+.1f %02d:%02d:%02d.%.3ld", 1900 + tm.tm_year, 1 + tm.tm_mon, tm.tm_mday,
-                     tm.tm_gmtoff / 3600.0, tm.tm_hour, tm.tm_min, tm.tm_sec, _info->timeval.tv_usec / 1000);
-#elif _WIN32
-            snprintf(temp_time, sizeof(temp_time), "%d-%02d-%02d %+.1f %02d:%02d:%02d.%.3d", 1900 + tm.tm_year, 1 + tm.tm_mon, tm.tm_mday,
-                     (-_timezone) / 3600.0, tm.tm_hour, tm.tm_min, tm.tm_sec, _info->timeval.tv_usec / 1000);
-#else
-            snprintf(temp_time, sizeof(temp_time), "%d-%02d-%02d %+.1f %02d:%02d:%02d.%.3d", 1900 + tm.tm_year, 1 + tm.tm_mon, tm.tm_mday,
-                     tm.tm_gmtoff / 3600.0, tm.tm_hour, tm.tm_min, tm.tm_sec, _info->timeval.tv_usec / 1000);
-#endif
+            snprintf(temp_time, sizeof(temp_time), "%04d-%02d-%02d %02d:%02d:%02d.%03ld",
+                     1900 + tm.tm_year, 1 + tm.tm_mon, tm.tm_mday,
+                     tm.tm_hour, tm.tm_min, tm.tm_sec, _info->timeval.tv_usec / 1000);
         }
 
-        // _log.AllocWrite(30*1024, false);
-        int ret = snprintf((char*)_log.PosPtr(), 1024, "[%s][%s][%" PRIdMAX ", %" PRIdMAX "%s][%s][%s, %s, %d][",  // **CPPLINT SKIP**
-                           _logbody ? levelStrings[_info->level] : levelStrings[kLevelFatal], temp_time,
-                           _info->pid, _info->tid, _info->tid == _info->maintid ? "*" : "", _info->tag ? _info->tag : "",
-                           filename, strFuncName, _info->line);
+        // 优化日志格式：参考 Logback/Log4j2 和 Android Logcat 的清晰格式
+        // 格式：时间 [PID:TID*] LEVEL/TAG 文件名:行号 - 消息
+        // 示例：2025-12-22 18:56:27.897 [25449:25449*] D/Account LogActivity.kt:212 - 用户登录请求
+        
+        const char* tag = _info->tag && strlen(_info->tag) > 0 ? _info->tag : "-";
+        const char* file = filename && strlen(filename) > 0 ? filename : "-";
+        const char* func = strFuncName[0] != '\0' ? strFuncName : "-";
+        int line = _info->line > 0 ? _info->line : 0;
+        const char* mainThreadMark = _info->tid == _info->maintid ? "*" : "";
+        
+        // 构建位置信息（文件名:行号 或 函数名:行号）
+        char location[256] = {0};
+        if (line > 0) {
+            if (file[0] != '-' && strlen(file) > 0) {
+                snprintf(location, sizeof(location), "%s:%d", file, line);
+            } else if (func[0] != '-' && strlen(func) > 0) {
+                snprintf(location, sizeof(location), "%s:%d", func, line);
+            } else {
+                snprintf(location, sizeof(location), ":%d", line);
+            }
+        } else {
+            if (file[0] != '-' && strlen(file) > 0) {
+                snprintf(location, sizeof(location), "%s", file);
+            } else if (func[0] != '-' && strlen(func) > 0) {
+                snprintf(location, sizeof(location), "%s", func);
+            } else {
+                location[0] = '\0';
+            }
+        }
+
+        int ret = snprintf((char*)_log.PosPtr(), 1024, 
+                           "%s [%" PRIdMAX ":%" PRIdMAX "%s] %s/%s %s - ",  // **CPPLINT SKIP**
+                           temp_time,
+                           _info->pid, _info->tid, mainThreadMark,
+                           _logbody ? levelStrings[_info->level] : levelStrings[kLevelFatal],
+                           tag,
+                           location[0] != '\0' ? location : "");
 
         assert(0 <= ret);
         _log.Length(_log.Pos() + ret, _log.Length() + ret);
-        //      memcpy((char*)_log.PosPtr() + 1, "\0", 1);
 
         assert((unsigned int)_log.Pos() == _log.Length());
     }
@@ -110,7 +127,34 @@ void log_formater(const XLoggerInfo* _info, const char* _logbody, PtrBuffer& _lo
         bodylen = bodylen > 0xFFFFU ? 0xFFFFU : bodylen;
         bodylen = strnlen(_logbody, bodylen);
         bodylen = bodylen > 0xFFFFU ? 0xFFFFU : bodylen;
-        _log.Write(_logbody, bodylen);
+        
+        // 处理多行日志（异常堆栈）：为后续行添加缩进，提高可读性
+        const char* body = _logbody;
+        size_t remaining = bodylen;
+        bool isFirstLine = true;
+        
+        while (remaining > 0) {
+            const char* lineStart = body;
+            const char* lineEnd = (const char*)memchr(body, '\n', remaining);
+            size_t lineLen = lineEnd ? (lineEnd - body) : remaining;
+            
+            if (lineLen > 0) {
+                if (!isFirstLine && lineLen > 0) {
+                    // 为多行日志的后续行添加缩进（4个空格），提高可读性
+                    _log.Write("    ", 4);
+                }
+                _log.Write(lineStart, lineLen);
+                isFirstLine = false;
+            }
+            
+            if (lineEnd) {
+                _log.Write("\n", 1);
+                body = lineEnd + 1;
+                remaining -= (lineLen + 1);
+            } else {
+                remaining = 0;
+            }
+        }
     } else {
         _log.Write("error!! NULL==_logbody");
     }

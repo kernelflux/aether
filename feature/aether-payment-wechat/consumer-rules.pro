@@ -2,5 +2,5 @@
 # Rules that will be applied to consumers of this library
 
 # Keep ResourceHelper class for consumers
--keep class com.kernelflux.aether.common.ResourceHelper { *; }
+-keep class com.kernelflux.aether.payment.api.ResourceHelper { *; }
 

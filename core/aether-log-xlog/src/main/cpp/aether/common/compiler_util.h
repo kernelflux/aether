@@ -11,13 +11,6 @@
 // limitations under the License.
 
 
-/*
- * compiler_util.h
- *
- *  Created on: 2013-11-15
- *      Author: yerungui
- */
-
 #ifndef COMM_COMPILER_UTIL_H_
 #define COMM_COMPILER_UTIL_H_
 

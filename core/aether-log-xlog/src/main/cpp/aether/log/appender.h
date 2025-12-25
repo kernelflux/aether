@@ -11,13 +11,6 @@
 // limitations under the License.
 
 
-/*
- * appender.h
- *
- *  Created on: 2013-3-7
- *      Author: yerungui
- */
-
 #ifndef APPENDER_H_
 #define APPENDER_H_
 
@@ -65,5 +58,12 @@ void appender_set_max_alive_duration(long _max_time);
  * @param _len    Length of the message (0 if _msg is NULL)
  */
 void appender_setExtraMSg(const char* _msg, unsigned int _len);
+
+/*
+ * Get custom header information
+ *
+ * @return    Custom header message (empty string if not set)
+ */
+const char* appender_getExtraMSg();
 
 #endif /* APPENDER_H_ */

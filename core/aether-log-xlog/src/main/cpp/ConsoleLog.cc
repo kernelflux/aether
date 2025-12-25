@@ -10,10 +10,6 @@
 // either express or implied. See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * created on : 2012-7-19
- * author : yanguoyue
- */
 
 #include <stdio.h>
 #include <string.h>

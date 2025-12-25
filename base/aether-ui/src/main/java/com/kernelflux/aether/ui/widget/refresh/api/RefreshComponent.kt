@@ -1,0 +1,133 @@
+package com.kernelflux.aether.ui.widget.refresh.api
+
+import android.view.View
+import androidx.annotation.ColorInt
+import androidx.annotation.RestrictTo
+import com.kernelflux.aether.ui.widget.refresh.constant.SpinnerStyle
+import com.kernelflux.aether.ui.widget.refresh.listener.OnStateChangedListener
+
+/**
+ * 刷新组件
+ * Created by scwang on 2017/5/26.
+ */
+interface RefreshComponent : OnStateChangedListener {
+    /**
+     * 获取实体视图
+     * @return 实体视图
+     */
+    fun getView(): View
+
+    /**
+     * 获取变换方式 [SpinnerStyle] 必须返回 非空
+     * @return 变换方式
+     */
+    fun getSpinnerStyle(): SpinnerStyle
+
+    /**
+     * 【仅限框架内调用】设置主题颜色
+     * @param colors 对应Xml中配置的 srlPrimaryColor srlAccentColor
+     */
+    @RestrictTo(
+        RestrictTo.Scope.LIBRARY,
+        RestrictTo.Scope.LIBRARY_GROUP,
+        RestrictTo.Scope.SUBCLASSES
+    )
+    fun setPrimaryColors(@ColorInt vararg colors: Int)
+
+    /**
+     * 【仅限框架内调用】尺寸定义完成 （如果高度不改变（代码修改：setHeader），只调用一次, 在RefreshLayout#onMeasure中调用）
+     * @param kernel RefreshKernel
+     * @param height HeaderHeight or FooterHeight
+     * @param maxDragHeight 最大拖动高度
+     */
+    @RestrictTo(
+        RestrictTo.Scope.LIBRARY,
+        RestrictTo.Scope.LIBRARY_GROUP,
+        RestrictTo.Scope.SUBCLASSES
+    )
+    fun onInitialized(kernel: RefreshKernel, height: Int, maxDragHeight: Int)
+
+    /**
+     * 【仅限框架内调用】手指拖动下拉（会连续多次调用，添加isDragging并取代之前的onPulling、onReleasing）
+     * @param isDragging true 手指正在拖动 false 回弹动画
+     * @param percent 下拉的百分比 值 = offset/footerHeight (0 - percent - (footerHeight+maxDragHeight) / footerHeight )
+     * @param offset 下拉的像素偏移量  0 - offset - (footerHeight+maxDragHeight)
+     * @param height 高度 HeaderHeight or FooterHeight (offset 可以超过 height 此时 percent 大于 1)
+     * @param maxDragHeight 最大拖动高度 offset 可以超过 height 参数 但是不会超过 maxDragHeight
+     */
+    @RestrictTo(
+        RestrictTo.Scope.LIBRARY,
+        RestrictTo.Scope.LIBRARY_GROUP,
+        RestrictTo.Scope.SUBCLASSES
+    )
+    fun onMoving(isDragging: Boolean, percent: Float, offset: Int, height: Int, maxDragHeight: Int)
+
+    /**
+     * 【仅限框架内调用】释放时刻（调用一次，将会触发加载）
+     * @param refreshLayout RefreshLayout
+     * @param height 高度 HeaderHeight or FooterHeight
+     * @param maxDragHeight 最大拖动高度
+     */
+    @RestrictTo(
+        RestrictTo.Scope.LIBRARY,
+        RestrictTo.Scope.LIBRARY_GROUP,
+        RestrictTo.Scope.SUBCLASSES
+    )
+    fun onReleased(refreshLayout: RefreshLayout, height: Int, maxDragHeight: Int)
+
+    /**
+     * 【仅限框架内调用】开始动画
+     * @param refreshLayout RefreshLayout
+     * @param height HeaderHeight or FooterHeight
+     * @param maxDragHeight 最大拖动高度
+     */
+    @RestrictTo(
+        RestrictTo.Scope.LIBRARY,
+        RestrictTo.Scope.LIBRARY_GROUP,
+        RestrictTo.Scope.SUBCLASSES
+    )
+    fun onStartAnimator(refreshLayout: RefreshLayout, height: Int, maxDragHeight: Int)
+
+    /**
+     * 【仅限框架内调用】动画结束
+     * @param refreshLayout RefreshLayout
+     * @param success 数据是否成功刷新或加载
+     * @return 完成动画所需时间 如果返回 Integer.MAX_VALUE 将取消本次完成事件，继续保持原有状态
+     */
+    @RestrictTo(
+        RestrictTo.Scope.LIBRARY,
+        RestrictTo.Scope.LIBRARY_GROUP,
+        RestrictTo.Scope.SUBCLASSES
+    )
+    fun onFinish(refreshLayout: RefreshLayout, success: Boolean): Int
+
+    /**
+     * 【仅限框架内调用】水平方向的拖动
+     * @param percentX 下拉时，手指水平坐标对屏幕的占比（0 - percentX - 1）
+     * @param offsetX 下拉时，手指水平坐标对屏幕的偏移（0 - offsetX - LayoutWidth）
+     * @param offsetMax 最大的偏移量
+     */
+    @RestrictTo(
+        RestrictTo.Scope.LIBRARY,
+        RestrictTo.Scope.LIBRARY_GROUP,
+        RestrictTo.Scope.SUBCLASSES
+    )
+    fun onHorizontalDrag(percentX: Float, offsetX: Int, offsetMax: Int)
+
+    /**
+     * 是否支持水平方向的拖动（将会影响到onHorizontalDrag的调用）
+     * @return 水平拖动需要消耗更多的时间和资源，所以如果不支持请返回false
+     */
+    fun isSupportHorizontalDrag(): Boolean
+
+    /**
+     * Display refresh animation, Multifunction.
+     * 显示刷新动画并且触发刷新事件
+     * @param duration 拖拽动画持续时间
+     * @param dragRate 拉拽的高度比率
+     * @param animationOnly animation only 只有动画
+     * @return If False is returned, this header does not support automatic refresh
+     * 返回 False 代表本Header不支持自动刷新
+     */
+    fun autoOpen(duration: Int, dragRate: Float, animationOnly: Boolean): Boolean
+}

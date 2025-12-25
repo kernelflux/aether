@@ -10,13 +10,6 @@
 // either express or implied. See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
- * log_buffer.cpp
- *
- *  Created on: 2015-7-28
- *      Author: yanguoyue
- */
-
 #include "log_buffer.h"
 
 #include <cstdio>

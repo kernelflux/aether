@@ -24,9 +24,13 @@ import kotlinx.coroutines.launch
 class NetworkActivity : BaseActivity() {
 
     private var networkClient: INetworkClient? = null
-    // 使用日志服务
+    // 使用日志服务，网络模块使用独立的日志文件
     private val logger: com.kernelflux.aether.log.api.ILogger? = 
         com.kernelflux.fluxrouter.core.FluxRouter.getService(com.kernelflux.aether.log.api.ILogger::class.java)
+    
+    // 网络模块专用的 logger（使用 withModule）
+    private val networkLogger: com.kernelflux.aether.log.api.ILogger?
+        get() = logger?.withModule("network")
     private var requestTag: Any? = null
 
     private lateinit var resultText: TextView
@@ -46,11 +50,11 @@ class NetworkActivity : BaseActivity() {
         // 检查网络客户端是否已初始化
         if (networkClient == null) {
             updateResult("❌ NetworkClient service not found. Please check if aether-network-okhttp module is included.")
-            logger?.e("NetworkActivity", "NetworkClient service not found")
+            networkLogger?.e("NetworkActivity", "NetworkClient service not found")
             return
         }
         
-        android.util.Log.d("NetworkActivity", "NetworkClient instance: ${networkClient.hashCode()}")
+        networkLogger?.d("NetworkActivity", "NetworkClient instance: ${networkClient.hashCode()}")
 
         // 设置网络状态监听
         setupNetworkStateMonitoring()
@@ -83,7 +87,7 @@ class NetworkActivity : BaseActivity() {
             // 添加网络状态监听器
             client.addNetworkStateListener(object : NetworkStateListener {
                 override fun onNetworkStateChanged(oldState: NetworkState, newState: NetworkState) {
-                        logger?.d("NetworkState", "Network state: $oldState -> $newState")
+                    networkLogger?.d("NetworkState", "Network state: $oldState -> $newState")
                 }
             })
         }
@@ -430,7 +434,7 @@ class NetworkActivity : BaseActivity() {
                     }
                     updateResult(result)
                 }
-                    logger?.d("NetworkTest", "$testName success: ${response.data}")
+                networkLogger?.d("NetworkTest", "$testName success: ${response.data}")
             }
 
             override fun onError(exception: NetworkException) {
@@ -462,7 +466,7 @@ class NetworkActivity : BaseActivity() {
                     }
                     updateResult(result)
                 }
-                logger?.e("NetworkTest", "$testName error", exception)
+                networkLogger?.e("NetworkTest", "$testName error", exception)
             }
         }
     }
@@ -583,7 +587,7 @@ class NetworkActivity : BaseActivity() {
             }
         } catch (e: Exception) {
             updateResult("❌ AES encryption test failed: ${e.message}")
-            logger?.e("NetworkTest", "AES encryption test error", e)
+            networkLogger?.e("NetworkTest", "AES encryption test error", e)
         }
     }
 
@@ -615,7 +619,7 @@ class NetworkActivity : BaseActivity() {
             }
         } catch (e: Exception) {
             updateResult("❌ RSA encryption test failed: ${e.message}")
-            logger?.e("NetworkTest", "RSA encryption test error", e)
+            networkLogger?.e("NetworkTest", "RSA encryption test error", e)
         }
     }
 

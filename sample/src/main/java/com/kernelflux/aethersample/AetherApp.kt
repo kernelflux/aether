@@ -32,6 +32,7 @@ class AetherApp : Application() {
             context = this,
             defaultConfig = LoggerConfig(
                 level = LogLevel.DEBUG, // 示例中使用 DEBUG，生产环境建议使用 INFO
+                tagPrefix = "AetherLog", // 统一日志前缀，方便在 Logcat 中筛选
                 consoleEnabled = true, // 示例中启用控制台输出
                 fileEnabled = true,
                 fileConfig = FileConfig(

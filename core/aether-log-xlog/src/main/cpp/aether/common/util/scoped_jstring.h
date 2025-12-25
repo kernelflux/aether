@@ -11,13 +11,6 @@
 // limitations under the License.
 
 
-/*
- * ScopedJstring.h
- *
- *  Created on: 2014-8-27
- *      Author: yanguoyue
- */
-
 #ifndef SCOPEDJSTRING_H_
 #define SCOPEDJSTRING_H_
 

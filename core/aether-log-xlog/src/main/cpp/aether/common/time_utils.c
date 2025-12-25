@@ -1,10 +1,3 @@
-/*
- * utils.c
- *
- *  Created on: 2012-7-18
- *      Author: yerungui
- */
-
 #include <sys/time.h>
 #include <stdint.h>
 

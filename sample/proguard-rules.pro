@@ -87,8 +87,8 @@
 -dontwarn com.google.protobuf.MessageLite
 
 # Keep ResourceHelper class (used by payment services)
--keep class com.kernelflux.aether.common.ResourceHelper { *; }
--dontwarn com.kernelflux.aether.common.ResourceHelper
+-keep class com.kernelflux.aether.payment.api.ResourceHelper { *; }
+-dontwarn com.kernelflux.aether.payment.api.ResourceHelper
 
 # Keep all Activity classes (required for AndroidManifest.xml)
 -keep class * extends android.app.Activity

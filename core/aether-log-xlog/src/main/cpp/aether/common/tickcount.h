@@ -11,13 +11,6 @@
 // limitations under the License.
 
 
-/*
- * tickcount.h
- *
- *  Created on: 2014-11-6
- *      Author: yerungui
- */
-
 #ifndef COMM_TICKCOUNT_H_
 #define COMM_TICKCOUNT_H_
 

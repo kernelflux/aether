@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import com.kernelflux.aether.log.api.AppenderMode
 import com.kernelflux.aether.log.api.ILogger
+import com.kernelflux.aether.log.api.LogFileInfo
+import com.kernelflux.aether.log.api.LogFileInfoCallback
 import com.kernelflux.aether.log.api.LoggerConfig
 import com.kernelflux.aether.log.api.LoggerHelper
 import com.kernelflux.aether.log.api.LogLevel
@@ -11,18 +13,6 @@ import com.kernelflux.fluxrouter.annotation.FluxService
 
 /**
  * Android Log 日志服务实现
- * 
- * 通过 @FluxService 注册到 FluxRouter
- * 用户通过 FluxRouter.getService(ILogger::class.java) 获取
- * 
- * 使用 android.util.Log 作为日志输出
- * 
- * 特性：
- * - 轻量级，无需额外依赖
- * - 不支持文件输出
- * - 不支持加密
- * 
- * @author Aether Framework
  */
 @FluxService(interfaceClass = ILogger::class)
 class AndroidLogLogger : ILogger {
@@ -67,46 +57,139 @@ class AndroidLogLogger : ILogger {
         Log.d("AndroidLogLogger", "Set enabled to $enabled")
     }
     
+    override fun withModule(moduleName: String): ILogger {
+        // 注意：Android Log 不支持文件输出，所以模块名在这里不起作用
+        return this
+    }
+    
     override fun v(tag: String, message: String, throwable: Throwable?) {
-        if (!LoggerHelper.shouldLog(LogLevel.VERBOSE, enabled, currentLevel)) return
-        val logMessage = LoggerHelper.formatMessage(message, throwable)
-        val formattedTag = LoggerHelper.formatTag(tag, config.tagPrefix)
-        Log.v(formattedTag, logMessage)
+        logInternal(LogLevel.VERBOSE, tag, message, throwable)
     }
     
     override fun d(tag: String, message: String, throwable: Throwable?) {
-        if (!LoggerHelper.shouldLog(LogLevel.DEBUG, enabled, currentLevel)) return
-        val logMessage = LoggerHelper.formatMessage(message, throwable)
-        val formattedTag = LoggerHelper.formatTag(tag, config.tagPrefix)
-        Log.d(formattedTag, logMessage)
+        logInternal(LogLevel.DEBUG, tag, message, throwable)
     }
     
     override fun i(tag: String, message: String, throwable: Throwable?) {
-        if (!LoggerHelper.shouldLog(LogLevel.INFO, enabled, currentLevel)) return
-        val logMessage = LoggerHelper.formatMessage(message, throwable)
-        val formattedTag = LoggerHelper.formatTag(tag, config.tagPrefix)
-        Log.i(formattedTag, logMessage)
+        logInternal(LogLevel.INFO, tag, message, throwable)
     }
     
     override fun w(tag: String, message: String, throwable: Throwable?) {
-        if (!LoggerHelper.shouldLog(LogLevel.WARN, enabled, currentLevel)) return
-        val logMessage = LoggerHelper.formatMessage(message, throwable)
-        val formattedTag = LoggerHelper.formatTag(tag, config.tagPrefix)
-        Log.w(formattedTag, logMessage)
+        logInternal(LogLevel.WARN, tag, message, throwable)
     }
     
     override fun e(tag: String, message: String, throwable: Throwable?) {
-        if (!LoggerHelper.shouldLog(LogLevel.ERROR, enabled, currentLevel)) return
-        val logMessage = LoggerHelper.formatMessage(message, throwable)
-        val formattedTag = LoggerHelper.formatTag(tag, config.tagPrefix)
-        Log.e(formattedTag, logMessage)
+        logInternal(LogLevel.ERROR, tag, message, throwable)
+    }
+    
+    /**
+     * 内部日志方法
+     */
+    private fun logInternal(level: LogLevel, tag: String, message: String, throwable: Throwable?) {
+        try {
+            if (!LoggerHelper.shouldLog(level, enabled, currentLevel)) return
+            val logMessage = LoggerHelper.formatMessage(message, throwable)
+            val formattedTag = LoggerHelper.formatTag(tag, config.tagPrefix)
+            when (level) {
+                LogLevel.VERBOSE -> Log.v(formattedTag, logMessage)
+                LogLevel.DEBUG -> Log.d(formattedTag, logMessage)
+                LogLevel.INFO -> Log.i(formattedTag, logMessage)
+                LogLevel.WARN -> Log.w(formattedTag, logMessage)
+                LogLevel.ERROR -> Log.e(formattedTag, logMessage)
+            }
+        } catch (e: Exception) {
+            // 防止非法字符导致crash，使用安全的日志打印
+            LoggerHelper.safeLogError("AndroidLogLogger", "Failed to log ${level.name.lowercase()} message", e)
+        }
     }
     
     override fun flush(isSync: Boolean) {
         // Android Log 不需要刷新
         Log.d("AndroidLogLogger", "flush called (no-op for Android Log)")
     }
+
+    override fun flushModule(moduleName: String, isSync: Boolean): Boolean {
+        return false
+    }
+
+    override fun getLogFileInfos(moduleName: String): List<LogFileInfo> {
+        return emptyList()
+    }
+
+    override fun getLogFileInfos(
+        moduleName: String,
+        daysAgo: Int
+    ): List<LogFileInfo> {
+        return emptyList()
+    }
+
+    override fun getLogFileInfos(
+        moduleName: String,
+        startTime: Long,
+        endTime: Long
+    ): List<LogFileInfo> {
+        return emptyList()
+    }
+
+    override suspend fun getLogFileInfosAsync(
+        moduleName: String,
+        startTime: Long,
+        endTime: Long
+    ): List<LogFileInfo> {
+        // Android Log 不支持文件输出，返回空列表
+        return emptyList()
+    }
     
+    override fun getLogFileInfosAsync(
+        moduleName: String,
+        startTime: Long,
+        endTime: Long,
+        callback: LogFileInfoCallback,
+        executor: java.util.concurrent.Executor?
+    ) {
+        // Android Log 不支持文件输出，直接回调空列表
+        if (executor != null) {
+            executor.execute {
+                callback.onSuccess(emptyList())
+            }
+        } else {
+            // 如果没有提供 executor，在主线程回调
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                callback.onSuccess(emptyList())
+            }
+        }
+    }
+    
+    override fun getLogFileInfosAsync(
+        moduleName: String,
+        startTime: Long,
+        endTime: Long,
+        callback: LogFileInfoCallback
+    ) {
+        // Android Log 不支持文件输出，直接回调空列表
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            callback.onSuccess(emptyList())
+        }
+    }
+
+    override fun flushModules(
+        moduleNames: List<String>,
+        isSync: Boolean
+    ): List<String> {
+        return emptyList()
+    }
+
+    override fun getAllModules(): List<String> {
+        return emptyList()
+    }
+
+    override fun clearFileCache(moduleName: String) {
+    }
+
+    override fun clearAllFileCache() {
+
+    }
+
     override fun close() {
         // Android Log 不需要关闭
         isInitialized = false

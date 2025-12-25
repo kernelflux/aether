@@ -151,7 +151,7 @@ Aether framework uses **Android standard Resources system** for multi-language s
 ### Usage
 
 ```kotlin
-import com.kernelflux.aether.common.ResourceHelper
+import com.kernelflux.aether.payment.api.ResourceHelper
 import com.kernelflux.aether.payment.api.PaymentResourceKeys
 
 val message = ResourceHelper.getString(

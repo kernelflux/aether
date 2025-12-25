@@ -11,13 +11,6 @@
 // limitations under the License.
 
 
-/*
- * assert.h
- *
- *  Created on: 2012-8-6
- *      Author: yerungui
- */
-
 #ifndef COMM_COMM_ASSERT_H_
 #define COMM_COMM_ASSERT_H_
 

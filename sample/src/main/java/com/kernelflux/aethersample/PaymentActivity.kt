@@ -24,8 +24,12 @@ import org.json.JSONObject
  */
 class PaymentActivity : BaseActivity() {
 
-    // 使用日志服务
+    // 使用日志服务，支付模块使用独立的日志文件
     private val logger: ILogger? = FluxRouter.getService(ILogger::class.java)
+    
+    // 支付模块专用的 logger（使用 withModule）
+    private val paymentLogger: ILogger?
+        get() = logger?.withModule("payment")
 
     private var selectedPaymentType: PaymentType = PaymentType.ALIPAY
     private val paymentServices = mutableMapOf<PaymentType, IPaymentService?>()
@@ -76,7 +80,7 @@ class PaymentActivity : BaseActivity() {
      * 我们采用延迟获取策略：在需要时再获取对应的支付服务
      */
     private fun initializePaymentServices() {
-        logger?.i("Payment", "开始初始化支付服务")
+        paymentLogger?.i("Payment", "开始初始化支付服务")
         
         // 由于 FluxRouter 只提供 getService 方法，我们采用延迟获取策略
         // 尝试获取一个服务作为示例（实际使用时会在需要时再获取）
@@ -85,13 +89,13 @@ class PaymentActivity : BaseActivity() {
             val paymentType = it.getPaymentType()
             paymentServices[paymentType] = it
             it.initialize(this)
-            logger?.d("Payment", "已初始化支付服务: $paymentType")
+            paymentLogger?.d("Payment", "已初始化支付服务: $paymentType")
         }
         
         if (paymentServices.isEmpty()) {
-            logger?.w("Payment", "未找到支付服务实现，将在使用时再尝试获取")
+            paymentLogger?.w("Payment", "未找到支付服务实现，将在使用时再尝试获取")
         } else {
-            logger?.i("Payment", "支付服务初始化完成，找到 ${paymentServices.size} 个服务")
+            paymentLogger?.i("Payment", "支付服务初始化完成，找到 ${paymentServices.size} 个服务")
         }
     }
     
@@ -116,13 +120,13 @@ class PaymentActivity : BaseActivity() {
                 // 类型匹配，缓存并初始化
                 paymentServices[paymentType] = it
                 it.initialize(this)
-                logger?.d("Payment", "获取到支付服务: $paymentType")
+                paymentLogger?.d("Payment", "获取到支付服务: $paymentType")
                 return it
             } else {
                 // 类型不匹配，缓存这个服务（可能后续会用到）
                 paymentServices[serviceType] = it
                 it.initialize(this)
-                logger?.w("Payment", "获取到的支付服务类型不匹配: 期望 $paymentType, 实际 $serviceType")
+                paymentLogger?.w("Payment", "获取到的支付服务类型不匹配: 期望 $paymentType, 实际 $serviceType")
             }
         }
         
@@ -149,38 +153,38 @@ class PaymentActivity : BaseActivity() {
      * 执行支付
      */
     private fun performPayment(statusText: TextView) {
-        logger?.i("Payment", "开始执行支付，支付方式: $selectedPaymentType")
+        paymentLogger?.i("Payment", "开始执行支付，支付方式: $selectedPaymentType")
         
         val service = getPaymentService(selectedPaymentType)
         
         if (service == null) {
-            logger?.e("Payment", "支付服务未找到: $selectedPaymentType")
+            paymentLogger?.e("Payment", "支付服务未找到: $selectedPaymentType")
             statusText.text = getString(R.string.payment_service_not_found, selectedPaymentType.name)
             return
         }
 
         if (!service.isAvailable()) {
-            logger?.w("Payment", "支付服务不可用: ${service.getPaymentName(this)}")
+            paymentLogger?.w("Payment", "支付服务不可用: ${service.getPaymentName(this)}")
             statusText.text = getString(R.string.payment_service_unavailable, service.getPaymentName(this))
             return
         }
 
         statusText.text = getString(R.string.payment_processing)
-        logger?.d("Payment", "支付服务可用，开始构建订单")
+        paymentLogger?.d("Payment", "支付服务可用，开始构建订单")
 
         // 构建支付订单
         val order = createPaymentOrder(selectedPaymentType)
-        logger?.d("Payment", "订单创建成功，订单ID: ${order.orderId}, 金额: ${order.amount}")
+        paymentLogger?.d("Payment", "订单创建成功，订单ID: ${order.orderId}, 金额: ${order.amount}")
 
         // 发起支付
-        logger?.i("Payment", "发起支付请求")
+        paymentLogger?.i("Payment", "发起支付请求")
         val currentOrderId = order.orderId // 保存订单ID，用于回调中引用
         service.pay(
             activity = this,
             order = order,
             callback = object : PaymentCallback {
                 override fun onSuccess(result: PaymentResult.Success) {
-                    logger?.i("Payment", "支付成功，订单ID: ${result.orderId}, 交易ID: ${result.transactionId}")
+                    paymentLogger?.i("Payment", "支付成功，订单ID: ${result.orderId}, 交易ID: ${result.transactionId}")
                     runOnUiThread {
                         val transactionInfo = result.transactionId?.let {
                             getString(R.string.payment_transaction_id, it)
@@ -190,14 +194,14 @@ class PaymentActivity : BaseActivity() {
                 }
 
                 override fun onFailed(result: PaymentResult.Failed) {
-                    logger?.e("Payment", "支付失败，订单ID: ${result.orderId}, 错误码: ${result.errorInfo.code}, 错误信息: ${result.errorInfo.message}")
+                    paymentLogger?.e("Payment", "支付失败，订单ID: ${result.orderId}, 错误码: ${result.errorInfo.code}, 错误信息: ${result.errorInfo.message}")
                     runOnUiThread {
                         statusText.text = getString(R.string.payment_failed, result.errorInfo.code, result.errorInfo.message)
                     }
                 }
 
                 override fun onCancelled() {
-                    logger?.w("Payment", "支付已取消，订单ID: $currentOrderId")
+                    paymentLogger?.w("Payment", "支付已取消，订单ID: $currentOrderId")
                     runOnUiThread {
                         statusText.text = getString(R.string.payment_cancelled)
                     }

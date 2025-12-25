@@ -1,7 +1,7 @@
 package com.kernelflux.aether.payment.api
 
 import android.content.Context
-import com.kernelflux.aether.common.ResourceHelper
+import com.kernelflux.aether.payment.api.ResourceHelper
 
 /**
  * 支付错误码

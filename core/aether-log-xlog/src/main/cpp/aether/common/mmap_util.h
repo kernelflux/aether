@@ -10,13 +10,6 @@
 // either express or implied. See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
- * mmap_util.h
- *
- *  Created on: 2016-2-22
- *      Author: yanguoyue
- */
-
 #ifndef MMAP_UTIL_H_
 #define MMAP_UTIL_H_
 

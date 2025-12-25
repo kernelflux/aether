@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="component_red_dot_color">#ff6022</color>
+    <color name="component_tab_bottom_view_bg_color">#dcdcdc</color>
+
+</resources>

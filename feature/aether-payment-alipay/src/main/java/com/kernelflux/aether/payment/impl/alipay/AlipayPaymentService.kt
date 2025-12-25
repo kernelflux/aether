@@ -10,7 +10,7 @@ import com.kernelflux.aether.payment.api.PaymentOrder
 import com.kernelflux.aether.payment.api.PaymentResult
 import com.kernelflux.aether.payment.api.PaymentType
 import android.content.Context
-import com.kernelflux.aether.common.ResourceHelper
+import com.kernelflux.aether.payment.api.ResourceHelper
 import com.kernelflux.aether.payment.api.PaymentResourceKeys
 import com.kernelflux.aether.payment.api.PaymentStatusListener
 import com.kernelflux.fluxrouter.annotation.FluxService

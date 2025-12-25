@@ -11,13 +11,6 @@
 // limitations under the License.
 
 
-/*
- * ScopedJstring.cpp
- *
- *  Created on: 2014-8-27
- *      Author: yanguoyue
- */
-
 #include "util/scoped_jstring.h"
 
 #include <cstddef>
